@@ -743,6 +743,26 @@ select.inp { cursor: pointer; }
 .stage.st-pat #kekeBody { animation: patJump .5s ease-out; }
 @keyframes patJump { 0%{transform:translateY(0)} 40%{transform:translateY(-14px)} 100%{transform:translateY(0)} }
 
+
+/* ============ 家长面板：分类与任务管理 ============ */
+.ad-sep { font-size: 14px; font-weight: 900; color: var(--title); margin: 18px 0 10px; display: flex; align-items: center; gap: 7px; }
+.ad-sep::after { content: ''; flex: 1; height: 2px; background: #fce4ef; border-radius: 2px; }
+.admin-box { max-height: 38vh; overflow-y: auto; padding-right: 2px; }
+.ad-cat { border: 2px solid #fce4ef; border-radius: 16px; padding: 11px 13px; margin-bottom: 10px; background: #fff; }
+.ad-cat-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ad-cat-head .ad-ic { width: 30px; height: 30px; flex: 0 0 auto; }
+.ad-cat-head b { font-size: 14.5px; color: var(--brown); flex: 1; min-width: 60px; }
+.ad-cat-head .ad-cnt { font-size: 11.5px; color: var(--brown-light); font-weight: 800; }
+.ad-del { border: 2px solid #f5c4c4; background: #fff; color: #d84a4a; border-radius: 9px; padding: 5px 10px; font-size: 12px; font-weight: 900; cursor: pointer; flex: 0 0 auto; }
+.ad-del:active { transform: scale(.93); }
+.ad-task { display: flex; align-items: center; gap: 8px; margin-top: 8px; background: #fdf6f9; border-radius: 11px; padding: 8px 11px; }
+.ad-task span { flex: 1; font-size: 13.5px; font-weight: 800; color: var(--brown); }
+.ad-task .ad-del { padding: 4px 9px; font-size: 11.5px; }
+.ad-add { display: flex; gap: 8px; margin-top: 10px; }
+.ad-add input { flex: 1; min-width: 0; border: 2px solid #fbd9e8; border-radius: 11px; padding: 9px 12px; font-size: 13.5px; font-weight: 700; color: var(--brown); outline: none; background: #fff; }
+.ad-add input:focus { border-color: var(--pink); }
+.ad-add button { flex: 0 0 auto; border: none; border-radius: 11px; background: var(--pink-deep); color: #fff; padding: 9px 15px; font-size: 13px; font-weight: 900; cursor: pointer; }
+.ad-add button:active { transform: scale(.94); }
 </style>
 </head>
 <body>
@@ -797,6 +817,7 @@ select.inp { cursor: pointer; }
       <svg class="nv-ic"><use href="#ic-wrong"/></svg><span>错题本</span>
       <span class="nv-dot" id="dot-wrong"></span>
     </div>
+    <div id="customNav" style="display:contents"></div>
     <div class="nav-item" onclick="openParent()" style="margin-top:8px;border-color:#fce4ef">
       <svg class="nv-ic"><use href="#ic-abc"/></svg><span>家长设置</span><span style="font-size:14px">🔒</span>
     </div>
@@ -1181,6 +1202,13 @@ select.inp { cursor: pointer; }
   <div class="dialog">
     <h3>👨‍👩‍👧 家长设置</h3>
     <p class="d-sub" id="parentSub">Nicole 学习工作台 · 管理面板</p>
+    <div class="ad-sep">🧩 分类与任务管理</div>
+    <div class="admin-box" id="adminBox"></div>
+    <div class="ad-add" style="margin-bottom:4px">
+      <input id="newCat" placeholder="新分类名，如：绘画 / 科学">
+      <button onclick="addCat()">＋添加分类</button>
+    </div>
+    <div class="ad-sep">⚙️ 日常管理</div>
     <div class="p-row">
       <div class="pl2"><div class="t">积分调整</div><div class="s" id="pPointsDesc">当前 0 分</div></div>
       <button class="p-btn-sm" onclick="adjPoints(10)">+10分</button>
@@ -1589,6 +1617,29 @@ const HABITS = [
   { id: 'hb3', name: '收拾玩具', icon: 'ic-toybox', tip: '送玩具回家', energy: 12 },
 ];
 
+/* ---------- 动态分类体系（家长可增删） ---------- */
+const CAT_ICON_POOL = ['ic-music','ic-puzzle','ic-palette','ic-craft','ic-book2','ic-game','ic-toybox','ic-headphone'];
+const TASK_ICON_POOL = ['ic-pen','ic-schoolbook','ic-workbook','ic-read','ic-math','ic-headphone','ic-abc','ic-book2','ic-star'];
+function buildDefaultCats() {
+  const cats = SUBJECTS.map(s => ({
+    id: s.key, name: s.name, icon: s.icon, kind: 'subject',
+    tasks: s.items.map(i => Object.assign({}, i)),
+  }));
+  cats.push({ id: 'reading', name: '每日阅读', icon: 'ic-read', kind: 'reading',
+    tasks: READING_ITEMS.map(i => Object.assign({}, i)) });
+  cats.push({ id: 'habit', name: '好习惯', icon: 'ic-desk', kind: 'habit',
+    tasks: HABITS.map(i => Object.assign({}, i)) });
+  return cats;
+}
+function ensureCats() {
+  if (!Array.isArray(state.cats) || !state.cats.length) state.cats = buildDefaultCats();
+  state.cats.forEach(c => {
+    if (!Array.isArray(c.tasks)) c.tasks = [];
+    if (!c.kind) c.kind = 'custom';
+  });
+}
+function catById(id) { return state.cats.find(c => c.id === id) || null; }
+
 const REWARDS = [
   { id: 'r1', cost: 20, name: '动画片半小时', emoji: '📺' },
   { id: 'r2', cost: 30, name: '小零食', emoji: '🍪' },
@@ -1726,6 +1777,7 @@ function loadState() {
   return st;
 }
 let state = loadState();
+ensureCats();
 let mathCheck = null;
 let animBusy = false;
 let curPage = state.currentPage || 'home';
@@ -1736,18 +1788,14 @@ function daysBetween(a, b) { return Math.max(0, Math.round((new Date(b) - new Da
 /* 全部任务（学科 + 阅读 + 习惯） */
 function allTasks() {
   const arr = [];
-  SUBJECTS.forEach(s => s.items.forEach(i => arr.push({ ...i, group: s.key })));
-  READING_ITEMS.forEach(i => arr.push({ ...i, group: 'reading' }));
-  HABITS.forEach(i => arr.push({ ...i, group: 'habit' }));
+  state.cats.forEach(c => c.tasks.forEach(i => arr.push(Object.assign({}, i, { group: c.id }))));
   return arr;
 }
-/* 今日需完成的任务总数：语文4 + 数学2 + 英语2 + 阅读2 + 习惯3 = 13 */
-function taskTotal() { return SUBJECTS.reduce((n, s) => n + s.items.length, 0) + READING_ITEMS.length + HABITS.length; }
+/* 今日需完成的任务总数：由所有分类的任务动态合计 */
+function taskTotal() { return state.cats.reduce((n, c) => n + c.tasks.length, 0); }
 function groupItems(key) {
-  if (key === 'reading') return READING_ITEMS;
-  if (key === 'habit') return HABITS;
-  const s = SUBJECTS.find(x => x.key === key);
-  return s ? s.items : [];
+  const c = catById(key);
+  return c ? c.tasks : [];
 }
 function doneCnt(list) { return list.filter(i => state.tasks[i.id]).length; }
 
@@ -1774,15 +1822,14 @@ function dayRollover() {
 
 /* 9 个首页宫格的定义 */
 function gridDefs() {
-  const defs = SUBJECTS.map(s => ({
-    key: s.key, name: s.name, icon: s.icon,
-    done: doneCnt(s.items), total: s.items.length, page: s.key,
+  const defs = state.cats.filter(c => c.kind !== 'habit').map(c => ({
+    key: c.id, name: c.name, icon: c.icon,
+    done: doneCnt(c.tasks), total: c.tasks.length, page: c.id,
   }));
-  defs.push({ key: 'reading', name: '每日阅读', icon: 'ic-read', done: doneCnt(READING_ITEMS), total: READING_ITEMS.length, page: 'reading' });
   defs.push({ key: 'schedule', name: '课表', icon: 'ic-calendar', done: 1, total: 1, page: 'schedule', always: true });
   defs.push({ key: 'pet', name: '宠物', icon: 'ic-bunny', done: state.pet.health >= 40 ? 1 : 0, total: 1, page: 'pet', always: true });
   defs.push({ key: 'wrong', name: '错题', icon: 'ic-wrong', done: state.wrongs.filter(w => !w.fixed).length === 0 ? 1 : 0, total: 1, page: 'wrong', always: true });
-  defs.push({ key: 'garden', name: '花园', icon: 'ic-flower', done: doneCnt(HABITS) > 0 ? 1 : 0, total: 1, page: 'garden' });
+  defs.push({ key: 'garden', name: '花园', icon: 'ic-flower', done: doneCnt(groupItems('habit')) > 0 ? 1 : 0, total: 1, page: 'garden' });
   defs.push({ key: 'all', name: '今日打卡', icon: 'ic-home', done: doneCnt(allTasks()), total: taskTotal(), page: 'home' });
   return defs;
 }
@@ -1791,6 +1838,12 @@ function gridDefs() {
    导航
    ============================================================ */
 const PAGE_TITLES = { home: '首页', garden: '花园', chinese: '语文', math: '数学', english: '英语', reading: '每日阅读', schedule: '课表', pet: '宠物', wrong: '错题本' };
+function pageTitle(page) {
+  if (PAGE_TITLES[page]) return PAGE_TITLES[page];
+  const c = catById(page);
+  return c ? c.name : '';
+}
+function validPage(page) { return !!PAGE_TITLES[page] || !!catById(page); }
 
 function go(page) {
   curPage = page;
@@ -1799,7 +1852,7 @@ function go(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
   const tb = document.getElementById('tbTitle');
-  if (tb) tb.textContent = PAGE_TITLES[page] || '';
+  if (tb) tb.textContent = pageTitle(page);
   const c = document.getElementById('content');
   if (c) c.scrollTop = 0;
   if (window.innerWidth <= 760) closeNav();
@@ -1887,10 +1940,8 @@ function renderHome() {
 
 /* 导航小红点：有未完成任务时显示 */
 function renderDots() {
-  const map = {
-    chinese: SUBJECTS[0].items, math: SUBJECTS[1].items, english: SUBJECTS[2].items,
-    reading: READING_ITEMS, garden: HABITS,
-  };
+  const map = {};
+  state.cats.forEach(c => { map[c.kind === 'habit' ? 'garden' : c.id] = c.tasks; });
   Object.entries(map).forEach(([k, items]) => {
     const el = document.getElementById('dot-' + k);
     if (!el) return;
@@ -1913,21 +1964,23 @@ function renderDots() {
 function taskCardHTML(t) {
   const done = !!state.tasks[t.id];
   return `<div class="t-item${done ? ' done' : ''}" onclick="toggleTask('${t.id}', this)">
-    <svg class="t-ic"><use href="#${t.icon}"/></svg>
+    <svg class="t-ic"><use href="#${t.icon || 'ic-star'}"/></svg>
     <div class="t-info">
       <div class="t-name">${t.name}</div>
-      <div class="t-tip">${t.tip}</div>
+      <div class="t-tip">${t.tip || '认真完成它'}</div>
     </div>
     <div class="t-check">✓</div>
   </div>`;
 }
+const SUBJECT_WRAP = { chinese: 'cnTasks', math: 'maTasks', english: 'enTasks', reading: 'rdTasks' };
+const SUBJECT_PRE = { chinese: 'cn', math: 'ma', english: 'en', reading: 'rd' };
 function renderSubject(key) {
   const items = groupItems(key);
-  const wrap = document.getElementById(key === 'chinese' ? 'cnTasks' : key === 'math' ? 'maTasks' : key === 'english' ? 'enTasks' : 'rdTasks');
+  const wrap = document.getElementById(SUBJECT_WRAP[key] || ('cxTasks-' + key));
   if (!wrap) return;
   wrap.innerHTML = items.map(taskCardHTML).join('');
   const done = doneCnt(items), total = items.length;
-  const pre = key === 'chinese' ? 'cn' : key === 'math' ? 'ma' : key === 'english' ? 'en' : 'rd';
+  const pre = SUBJECT_PRE[key] || ('cx-' + key);
   const pEl = document.getElementById(pre + 'Prog'), bEl = document.getElementById(pre + 'Bar');
   if (pEl) pEl.textContent = `${done}/${total}`;
   if (bEl) bEl.style.width = (total ? done / total * 100 : 0) + '%';
@@ -1990,15 +2043,15 @@ function renderGarden() {
   document.getElementById('gardenEnergyBar').style.width = (e >= 100 ? 100 : e) + '%';
   document.getElementById('gardenEnergyTx').textContent = `${e}/100`;
 
-  const items = HABITS;
+  const items = groupItems('habit');
   document.getElementById('gardenHabitCnt').textContent = `${doneCnt(items)}/${items.length}`;
   document.getElementById('gardenHabits').innerHTML = items.map(t => {
     const done = !!state.tasks[t.id];
     return `<div class="t-item${done ? ' done' : ''}" onclick="toggleTask('${t.id}', this)">
-      <svg class="t-ic"><use href="#${t.icon}"/></svg>
+      <svg class="t-ic"><use href="#${t.icon || 'ic-star'}"/></svg>
       <div class="t-info">
         <div class="t-name">${t.name}</div>
-        <div class="t-tip">${t.tip}</div>
+        <div class="t-tip">${t.tip || '好习惯'}</div>
       </div>
       <div class="t-check">✓</div>
     </div>`;
@@ -2102,8 +2155,8 @@ function delWrong(i) {
    打卡 / 兑换
    ============================================================ */
 function toggleTask(id, el) {
-  const isHabit = HABITS.some(h => h.id === id);
-  const habit = HABITS.find(h => h.id === id);
+  const habit = groupItems('habit').find(h => h.id === id) || null;
+  const isHabit = !!habit;
 
   if (state.tasks[id]) {
     if (!confirm('取消这项打卡吗？会退回 2 分和 1 颗星星哦')) return;
@@ -2122,7 +2175,7 @@ function toggleTask(id, el) {
     // 花园能量
     if (isHabit && habit) {
       const oldE = state.garden.energy;
-      state.garden.energy += habit.energy;
+      state.garden.energy += (habit.energy || 12);
       // 满 100 收获
       if (Math.floor(state.garden.energy / 100) > Math.floor(oldE / 100)) {
         state.garden.harvested += 1;
@@ -2348,6 +2401,7 @@ function renderStats() {
 function renderPage(page) {
   if (page === 'home') renderHome();
   else if (['chinese','math','english','reading'].includes(page)) renderSubject(page);
+  else if (catById(page)) renderSubject(page);
   else if (page === 'garden') renderGarden();
   else if (page === 'schedule') renderSchedule();
   else if (page === 'wrong') renderWrong();
@@ -2460,10 +2514,115 @@ function submitMath() {
 function openParent() { askMath('请家长完成算术题进入设置', () => { showOv('ovParent'); renderParent(); }); }
 
 /* ============================================================
+   家长：分类与任务管理
+   ============================================================ */
+function renderAdmin() {
+  const el = document.getElementById('adminBox');
+  if (!el) return;
+  el.innerHTML = state.cats.map(c => {
+    const rows = c.tasks.map(t => `<div class="ad-task">
+      <span>${esc(t.name)}</span>
+      <button class="ad-del" onclick="delTask('${t.id}')">删</button></div>`).join('');
+    const lockNote = c.kind === 'habit' ? '·喂花园' : (c.kind === 'reading' ? '·阅读页' : (c.kind === 'subject' ? '' : ''));
+    return `<div class="ad-cat">
+      <div class="ad-cat-head">
+        <svg class="ad-ic"><use href="#${c.icon || 'ic-star'}"/></svg>
+        <b>${esc(c.name)}</b>
+        <span class="ad-cnt">${c.tasks.length}项${lockNote}</span>
+        ${c.kind === 'custom' ? `<button class="ad-del" onclick="delCat('${c.id}')">删除分类</button>` : ''}
+      </div>
+      ${rows ? `<div>${rows}</div>` : ''}
+      <div class="ad-add">
+        <input id="nt-${c.id}" placeholder="新任务名，如：背古诗">
+        <button onclick="addTask('${c.id}')">＋添加</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="ad-cat"><div class="ad-cat-head"><b style="color:#c3aab8">暂无分类</b></div></div>';
+}
+function addCat() {
+  const inp = document.getElementById('newCat');
+  const name = (inp.value || '').trim();
+  if (!name) { showToast('先输入分类名字'); return; }
+  if (catById(name) || state.cats.some(c => c.name === name)) { showToast('已有同名分类啦'); return; }
+  const icon = CAT_ICON_POOL[state.cats.length % CAT_ICON_POOL.length];
+  state.cats.push({ id: 'c' + Date.now(), name, icon, kind: 'custom', tasks: [] });
+  inp.value = '';
+  saveState(); syncCustomUI(); renderAdmin(); renderAll();
+  showToast(`已添加分类「${name}」，记得给它加任务哦`);
+}
+function delCat(cid) {
+  const c = catById(cid);
+  if (!c || c.kind !== 'custom') return;
+  if (!confirm(`删除分类「${c.name}」和它的 ${c.tasks.length} 个任务？`)) return;
+  c.tasks.forEach(t => delete state.tasks[t.id]);
+  state.cats = state.cats.filter(x => x.id !== cid);
+  saveState();
+  if (curPage === cid) { curPage = 'home'; }
+  syncCustomUI(); renderAdmin(); go(validPage(curPage) ? curPage : 'home');
+  showToast(`已删除分类「${c.name}」`);
+}
+function addTask(cid) {
+  const c = catById(cid);
+  if (!c) return;
+  const inp = document.getElementById('nt-' + cid);
+  const name = (inp.value || '').trim();
+  if (!name) { showToast('先输入任务名字'); return; }
+  if (c.tasks.some(t => t.name === name)) { showToast('这个分类里已有同名任务'); return; }
+  const icon = TASK_ICON_POOL[c.tasks.length % TASK_ICON_POOL.length];
+  const t = { id: 't' + Date.now() + Math.floor(Math.random() * 99), name, icon };
+  if (c.kind === 'habit') { t.tip = '好习惯'; t.energy = 12; }
+  c.tasks.push(t);
+  inp.value = '';
+  saveState(); renderAdmin(); renderAll();
+  showToast(`已添加「${name}」到 ${c.name}`);
+}
+function delTask(tid) {
+  let hit = null;
+  state.cats.forEach(c => { const f = c.tasks.find(x => x.id === tid); if (f) hit = { task: f, cat: c }; });
+  if (!hit) return;
+  if (!confirm(`删除任务「${hit.task.name}」？`)) return;
+  hit.cat.tasks = hit.cat.tasks.filter(x => x.id !== tid);
+  delete state.tasks[tid];
+  saveState(); renderAdmin(); renderAll();
+  showToast(`已删除「${hit.task.name}」`);
+}
+/* 自定义分类 → 侧边导航 + 页面（增删后调用） */
+function syncCustomUI() {
+  document.querySelectorAll('.nav-item.nav-custom').forEach(n => n.remove());
+  document.querySelectorAll('.page.page-custom').forEach(p => p.remove());
+  const navBox = document.getElementById('customNav');
+  const content = document.getElementById('content');
+  if (!navBox || !content) return;
+  state.cats.filter(c => c.kind === 'custom').forEach(c => {
+    const nv = document.createElement('div');
+    nv.className = 'nav-item nav-custom';
+    nv.dataset.page = c.id;
+    nv.setAttribute('onclick', `go('${c.id}')`);
+    nv.innerHTML = `<svg class="nv-ic"><use href="#${c.icon || 'ic-star'}"/></svg><span>${esc(c.name)}</span><span class="nv-dot" id="dot-${c.id}"></span>`;
+    navBox.appendChild(nv);
+    const pg = document.createElement('section');
+    pg.className = 'page page-custom';
+    pg.id = 'page-' + c.id;
+    pg.innerHTML = `<div class="page-head">
+        <svg class="ph-ic"><use href="#${c.icon || 'ic-star'}"/></svg>
+        <h2>${esc(c.name)}</h2>
+        <div class="ph-sub">坚持打卡 · 攒星星</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>${esc(c.name)}进度</span><span><b id="cx-${c.id}Prog">0/0</b></span></div>
+        <div class="pp-bar"><i id="cx-${c.id}Bar"></i></div>
+      </div>
+      <div class="task-list" id="cxTasks-${c.id}"></div>`;
+    content.appendChild(pg);
+  });
+}
+
+/* ============================================================
    家长面板
    ============================================================ */
 function renderParent() {
   document.getElementById('parentSub').textContent = '当前管理：🐰 Nicole 的学习工作台';
+  renderAdmin();
   const pd = document.getElementById('pPointsDesc');
   if (pd) pd.textContent = `当前 ${state.points} 分 · 可手动奖励或纠正`;
   const sd = document.getElementById('pStarsDesc');
@@ -2523,8 +2682,10 @@ function restoreData() {
     if (!Array.isArray(state.books)) state.books = [];
     state.soundOn = so;
     state.firstRun = false;
+    ensureCats();
     saveState();
     closeOv('ovParent');
+    syncCustomUI();
     go('home');
     renderAll();
     showToast('恢复成功！数据已经回来啦');
@@ -2539,6 +2700,7 @@ function clearAll() {
   state = freshState();
   state.soundOn = so;
   state.firstRun = false;
+  ensureCats();
   saveState();
   closeOv('ovParent');
   go('home');
@@ -2561,7 +2723,8 @@ function boot() {
   dayRollover();
   if (!state.books) state.books = [];
 
-  const startPage = PAGE_TITLES[curPage] ? curPage : 'home';
+  syncCustomUI();
+  const startPage = validPage(curPage) ? curPage : 'home';
   go(startPage);
   renderAll();
 
