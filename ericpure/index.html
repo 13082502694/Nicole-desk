@@ -7,372 +7,650 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Eric学习台">
-<meta name="theme-color" content="#2f86c9">
+<meta name="theme-color" content="#4da3dd">
 <title>Eric的学习工作台</title>
 <style>
 /* ============================================================
-   Eric 的学习工作台 · 纯净版
-   鲸鱼海洋主题 🐳 男孩风 · 单页打卡 + 积分奖励 + 宠物泡泡
-   家长可增删分类与任务 · iPad 独立 App · 全离线
+   Eric 的学习工作台 · 游戏化学习平台
+   侧边导航 + 多页面 + 做家务 + 错题本 + 宠物泡泡
+   海洋蓝鲸鱼主题 🐳  适配 iPad：触屏大按钮 / 横竖屏自适应 / 全离线
    ============================================================ */
 :root {
-  --blue: #2f86c9;
-  --blue-deep: #1c6bb5;
-  --blue-light: #e8f4fc;
-  --title: #17558f;
-  --navy: #27496d;
-  --navy-light: #6a9cc0;
+  --pink: #4da3dd;
+  --pink-deep: #2f86c9;
+  --pink-light: #e8f4fc;
+  --title: #1f6bb0;
+  --carrot: #ff9d5c;
+  --brown: #2c5f8a;
+  --brown-light: #6a9cc0;
   --gold: #ffc94d;
-  --gold-deep: #e8a10c;
   --green: #58c07d;
   --green-light: #e9f7ee;
-  --red: #f26d6d;
-  --card-shadow: 0 8px 26px rgba(47,134,201,.12);
-  --radius: 22px;
+  --blue: #5a9bd6;
+  --purple: #a98fe0;
+  --card-shadow: 0 6px 22px rgba(47, 134, 201, .12);
+  --radius: 20px;
+  --side-w: 176px;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   -webkit-user-select: none; user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  min-height: 100%;
+  height: 100%;
 }
 body {
-  background: linear-gradient(165deg, #eaf5fd 0%, #f6fbff 40%, #e2f1fb 100%);
-  color: var(--navy);
-  padding-bottom: max(30px, env(safe-area-inset-bottom));
-  overflow-x: hidden;
+  background: linear-gradient(150deg, #eaf5fd 0%, #f2f9fe 45%, #e8f4fc 100%);
+  color: var(--brown);
+  overflow: hidden;
 }
+/* 背景装饰 */
 body::before {
   content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(circle at 90% 6%, rgba(79,208,192,.10) 0%, transparent 32%),
-    radial-gradient(circle at 4% 90%, rgba(255,201,77,.10) 0%, transparent 26%);
+    radial-gradient(circle at 88% 8%, rgba(77,163,221,.10) 0%, transparent 30%),
+    radial-gradient(circle at 6% 92%, rgba(255,201,77,.09) 0%, transparent 28%);
 }
 
-/* ===== 顶部粘性栏 ===== */
+/* ============ 布局骨架 ============ */
+.app { display: flex; height: 100vh; height: 100dvh; position: relative; z-index: 1; }
+
+/* 顶部栏（移动端显示，含汉堡菜单） */
 .topbar {
-  position: sticky; top: 0; z-index: 50;
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border-bottom: 2px solid #d6eaf9;
+  display: none;
+  align-items: center; gap: 12px;
   padding: 10px 16px;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1.5px solid #d6eaf9;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
   padding-top: max(10px, env(safe-area-inset-top));
 }
-.topbar .t-logo { width: 34px; height: 34px; flex: 0 0 auto; }
-.topbar .t-name { font-size: 16px; font-weight: 900; color: var(--title); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tb-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  border-radius: 999px; padding: 6px 12px;
-  font-size: 13.5px; font-weight: 900; flex: 0 0 auto;
+.topbar .hamb {
+  width: 40px; height: 40px; border-radius: 12px; border: 2px solid #c3e1f5;
+  background: #fff; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+  flex: 0 0 auto;
 }
-.tb-pill.stars { background: #fff8e6; border: 2px solid #ffe9b8; color: var(--gold-deep); }
-.tb-pill.pts { background: var(--green-light); border: 2px solid #c8ead6; color: #2f9e5e; }
-.tb-lock {
-  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
-  border: 2px solid #bcd9f2; background: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; cursor: pointer;
-}
-.tb-lock:active { transform: scale(.94); }
-
-/* ===== 主体 ===== */
-.wrap { max-width: 660px; margin: 0 auto; padding: 18px 16px 0; position: relative; z-index: 1; }
-
-/* 英雄区 */
-.hero {
-  background: linear-gradient(150deg, #ffffff 0%, #e8f4fc 100%);
-  border: 2px solid #d6eaf9; border-radius: var(--radius);
-  box-shadow: var(--card-shadow);
-  padding: 22px 20px 18px; margin-bottom: 16px;
-  display: flex; align-items: center; gap: 16px;
-  position: relative; overflow: hidden;
-}
-.hero::after {
-  content: ''; position: absolute; right: -30px; bottom: -34px;
-  width: 130px; height: 130px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(79,208,192,.16) 0%, transparent 70%);
-}
-.hero .h-logo { width: 74px; height: 74px; flex: 0 0 auto; filter: drop-shadow(0 4px 8px rgba(47,134,201,.25)); }
-.hero .h-info { flex: 1; min-width: 0; }
-.hero .h-title { font-size: 21px; font-weight: 900; color: var(--title); letter-spacing: .5px; }
-.hero .h-sub { font-size: 12.5px; color: var(--navy-light); font-weight: 700; margin-top: 4px; }
-.hero .h-date { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px;
-  background: #fff; border: 2px solid #d6eaf9; border-radius: 999px;
-  padding: 4px 12px; font-size: 12.5px; font-weight: 800; color: var(--blue); }
-
-/* 今日进度 */
-.prog-card {
-  background: #fff; border: 2px solid #d6eaf9; border-radius: var(--radius);
-  box-shadow: var(--card-shadow); padding: 16px 18px; margin-bottom: 22px;
-}
-.prog-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.prog-top .pt-name { font-size: 15px; font-weight: 900; color: var(--title); }
-.prog-top .pt-val { font-size: 13px; font-weight: 800; color: var(--navy-light); }
-.prog-top .pt-val b { font-size: 19px; color: var(--blue-deep); }
-.prog-bar { height: 14px; background: #e2eef8; border-radius: 999px; overflow: hidden; }
-.prog-bar i { display: block; height: 100%; width: 0; border-radius: 999px;
-  background: linear-gradient(90deg, #8ecdf0, #2f86c9); transition: width .5s cubic-bezier(.4,0,.2,1); }
-
-/* 区块标题 */
-.sec-head { display: flex; align-items: center; gap: 9px; margin: 0 2px 12px; }
-.sec-head .s-ic { width: 30px; height: 30px; flex: 0 0 auto; }
-.sec-head .s-tx { font-size: 17px; font-weight: 900; color: var(--title); }
-.sec-head .s-badge {
-  margin-left: auto; background: var(--blue-light); color: var(--blue-deep);
-  border-radius: 999px; padding: 3px 12px; font-size: 12.5px; font-weight: 900;
+.topbar .hamb span { display: block; width: 18px; height: 2.5px; background: var(--pink-deep); border-radius: 2px; }
+.topbar .tb-title { font-size: 17px; font-weight: 900; color: var(--title); flex: 1; }
+.topbar .tb-stars {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #fff8e6; border: 2px solid #ffe9b8; border-radius: 999px;
+  padding: 5px 12px; font-size: 14px; font-weight: 900; color: #e8a10c;
 }
 
-/* ===== 分类任务卡 ===== */
-.cat-card {
-  background: #fff; border: 2px solid #d6eaf9; border-radius: var(--radius);
-  box-shadow: var(--card-shadow); margin-bottom: 14px; overflow: hidden;
+/* ============ 侧边导航 ============ */
+.sidebar {
+  flex: 0 0 var(--side-w); width: var(--side-w);
+  background: rgba(255,255,255,.86);
+  backdrop-filter: blur(14px);
+  border-right: 1.5px solid #d6eaf9;
+  display: flex; flex-direction: column;
+  padding: 18px 12px;
+  gap: 6px; overflow-y: auto;
+  padding-top: max(18px, env(safe-area-inset-top));
 }
-.cat-head {
+.brand {
+  display: flex; align-items: center; gap: 9px;
+  padding: 0 6px 14px; margin-bottom: 6px;
+  border-bottom: 1.5px solid #d6eaf9;
+}
+.brand .bg-logo { width: 38px; height: 38px; flex: 0 0 auto; }
+.brand .bg-tx { font-size: 14px; font-weight: 900; color: var(--title); line-height: 1.3; white-space: nowrap; }
+.brand .bg-tx small { display: block; font-size: 10px; color: var(--brown-light); font-weight: 700; margin-top: 2px; }
+
+.nav-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 13px 16px 11px; border-bottom: 2px dashed #e4f0f9;
+  padding: 11px 13px; border-radius: 14px;
+  font-size: 15px; font-weight: 800; color: var(--brown);
+  cursor: pointer; transition: all .16s; position: relative;
+  border: 2px solid transparent; white-space: nowrap;
 }
-.cat-head .c-ic { width: 40px; height: 40px; flex: 0 0 auto; }
-.cat-head .c-name { font-size: 16.5px; font-weight: 900; color: var(--navy); flex: 1; }
-.cat-head .c-cnt {
-  background: var(--green-light); color: #2f9e5e; border: 2px solid #c8ead6;
-  border-radius: 999px; padding: 3px 11px; font-size: 12.5px; font-weight: 900;
+.nav-item .nv-ic { width: 26px; height: 26px; flex: 0 0 auto; }
+.nav-item:active { transform: scale(.97); }
+.nav-item.active {
+  background: linear-gradient(135deg, #fff 0%, var(--pink-light) 100%);
+  border-color: #bcd9f2; color: var(--title);
+  box-shadow: 0 4px 14px rgba(47,134,201,.16);
 }
-.cat-card.all-done .cat-head .c-cnt { background: var(--green); color: #fff; border-color: var(--green); }
-.cat-list { padding: 6px 10px 10px; }
-.cat-empty { padding: 12px 10px; font-size: 13px; color: #a3c3dc; font-weight: 700; }
+.nav-item .nv-dot {
+  margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 999px; background: var(--green); color: #fff;
+  font-size: 11px; font-weight: 900;
+  display: none; align-items: center; justify-content: center;
+}
+.nav-item .nv-dot.show { display: inline-flex; }
 
-/* 任务行 */
-.tk {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 12px; border-radius: 15px; cursor: pointer;
-  transition: background .15s, transform .12s;
-  border: 2px solid transparent;
+/* 侧边栏底部小提示 */
+.side-foot {
+  margin-top: auto; padding: 12px 8px 0; border-top: 1.5px solid #d6eaf9;
+  font-size: 11px; color: #a3c3dc; line-height: 1.6; text-align: center;
 }
-.tk:active { transform: scale(.98); }
-.tk .tk-dot { width: 11px; height: 11px; border-radius: 50%; flex: 0 0 auto;
-  background: linear-gradient(135deg, #8ecdf0, #2f86c9); }
-.tk .tk-name { flex: 1; font-size: 15.5px; font-weight: 800; color: var(--navy); }
-.tk .tk-check {
-  width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
-  border: 2.5px solid #c9dff0; display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 900; color: #fff; background: #fff; transition: all .18s;
+.nav-mask {
+  display: none; position: fixed; inset: 0; background: rgba(44,95,138,.34);
+  z-index: 55; backdrop-filter: blur(2px);
 }
-.tk.done { background: linear-gradient(135deg, #f2fcf6, #e8f8ef); border-color: #c8ead6; }
-.tk.done .tk-dot { background: var(--green); }
-.tk.done .tk-name { color: #7aa892; text-decoration: line-through; }
-.tk.done .tk-check { background: var(--green); border-color: var(--green); }
+.nav-mask.show { display: block; }
 
-/* ===== 奖励中心 ===== */
+/* ============ 内容区 ============ */
+.content {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 22px 26px 40px;
+  scroll-behavior: smooth;
+  padding-bottom: max(40px, env(safe-area-inset-bottom));
+}
+.page { display: none; animation: pageIn .26s ease-out; }
+.page.active { display: block; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.page-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.page-head .ph-ic { width: 40px; height: 40px; flex: 0 0 auto; }
+.page-head h2 { font-size: 23px; color: var(--title); font-weight: 900; letter-spacing: .3px; }
+.page-head .ph-sub { font-size: 13px; color: var(--brown-light); font-weight: 700; margin-left: auto; }
+
+/* ============ 首页：用户卡 ============ */
+.hero {
+  display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 18px;
+}
+.hero-card {
+  background: #fff; border-radius: var(--radius); padding: 20px 22px;
+  box-shadow: var(--card-shadow); border: 2px solid #d6eaf9;
+}
+.user-row { display: flex; align-items: center; gap: 14px; }
+.user-ava {
+  width: 62px; height: 62px; flex: 0 0 auto; border-radius: 50%;
+  background: linear-gradient(135deg, #f2f9fe, #e4f2fc);
+  border: 3px solid #bcd9f2;
+  display: flex; align-items: center; justify-content: center;
+}
+.user-ava svg { width: 44px; height: 44px; }
+.user-info h3 { font-size: 20px; color: var(--title); font-weight: 900; display: flex; align-items: center; gap: 7px; }
+.user-info .u-date { font-size: 12.5px; color: var(--brown-light); font-weight: 700; margin-top: 3px; }
+.user-info .u-day {
+  display: inline-block; margin-top: 7px; font-size: 12px; font-weight: 800;
+  color: var(--pink-deep); background: var(--pink-light);
+  padding: 2px 10px; border-radius: 999px;
+}
+.prog-line { margin-top: 16px; }
+.prog-line .pl-tx {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13px; font-weight: 800; color: var(--brown-light); margin-bottom: 7px;
+}
+.prog-line .pl-tx b { font-size: 17px; color: var(--title); }
+.prog-bar { height: 13px; background: #fbe8f1; border-radius: 999px; overflow: hidden; }
+.prog-bar .pb-fill {
+  height: 100%; border-radius: 999px; width: 0;
+  background: linear-gradient(90deg, #8ecdf0, var(--pink-deep));
+  transition: width .5s ease-out;
+}
+.encourage {
+  background: linear-gradient(135deg, #fbfeff 0%, #eef8fe 100%);
+  border-color: #fde0c5;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.encourage .en-h {
+  font-size: 13.5px; font-weight: 900; color: #d99043;
+  display: flex; align-items: center; gap: 6px; margin-bottom: 9px;
+}
+.encourage .en-tx { font-size: 14.5px; line-height: 1.65; color: #a3763a; font-weight: 700; }
+
+/* ============ 首页：九宫格 ============ */
+.sec-title {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 16.5px; font-weight: 900; color: var(--title);
+  margin: 22px 0 13px;
+}
+.sec-title .st-ic { width: 24px; height: 24px; }
+.sec-title .st-count {
+  margin-left: auto; font-size: 13px; color: var(--brown-light); font-weight: 800;
+}
+
+.grid9 {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  max-width: 760px;
+}
+.g-card {
+  background: #fff; border-radius: 16px; padding: 13px 10px 12px;
+  text-align: center; cursor: pointer;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
+  transition: all .18s; position: relative; overflow: hidden;
+}
+.g-card:active { transform: scale(.97); }
+.g-card.done { background: linear-gradient(160deg, #f2fcf6 0%, #e6f8ee 100%); border-color: #c8ead6; }
+.g-card .gc-ic { width: 42px; height: 42px; margin: 0 auto 8px; display: block; }
+.g-card .gc-name { font-size: 15px; font-weight: 900; color: var(--brown); }
+.g-card .gc-prog {
+  font-size: 13px; font-weight: 900; color: var(--brown-light); margin-top: 3px;
+}
+.g-card.done .gc-prog { color: var(--green); }
+.g-card .gc-tick {
+  position: absolute; top: 10px; right: 10px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--green); color: #fff; font-size: 15px; font-weight: 900;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 3px 9px rgba(88,192,125,.4);
+}
+.g-card.done .gc-tick { display: flex; }
+.g-card .gc-bar {
+  height: 6px; background: #fbe8f1; border-radius: 999px; margin-top: 10px; overflow: hidden;
+}
+.g-card .gc-bar i {
+  display: block; height: 100%; border-radius: 999px; width: 0;
+  background: linear-gradient(90deg, #a2d8f5, var(--pink-deep)); transition: width .4s;
+}
+.g-card.done .gc-bar i { background: linear-gradient(90deg, #9be3b8, var(--green)); }
+
+/* ============ 首页：奖励中心 ============ */
 .reward-head {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #fff; border: 2px solid #d6eaf9; border-radius: 16px;
-  padding: 10px 16px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #fff 0%, #f0f9fe 100%);
+  border: 2px solid #ffe9b8; border-radius: 16px;
+  padding: 11px 16px; margin-bottom: 14px;
 }
-.reward-head .rh-tx { font-size: 13.5px; font-weight: 800; color: var(--navy-light); }
-.reward-head .rh-pts { font-size: 14px; font-weight: 900; color: #2f9e5e;
-  background: var(--green-light); border-radius: 999px; padding: 5px 13px; }
-.reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; margin-bottom: 24px; }
-.rw-card {
-  position: relative; background: #fff; border: 2.5px solid #d6eaf9; border-radius: 18px;
-  padding: 14px 8px 12px; text-align: center; cursor: pointer;
-  transition: all .15s; box-shadow: 0 4px 14px rgba(47,134,201,.08);
+.reward-head .rh-tx { font-size: 13.5px; font-weight: 800; color: #a3763a; flex: 1; }
+.reward-head .rh-star {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #fff; border: 2px solid #ffe9b8; border-radius: 999px;
+  padding: 4px 13px; font-size: 15px; font-weight: 900; color: #e8a10c;
 }
-.rw-card:active { transform: scale(.96); }
-.rw-card .rw-ic { width: 52px; height: 52px; margin: 0 auto 6px; }
-.rw-card .rw-name { font-size: 13.5px; font-weight: 900; color: var(--navy); line-height: 1.35; }
-.rw-card .rw-cost {
-  margin-top: 7px; display: inline-flex; align-items: center; gap: 4px;
-  background: #fff8e6; border: 2px solid #ffe9b8; color: var(--gold-deep);
-  border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 900;
+.reward-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.r-card {
+  background: #fff; border-radius: 18px; padding: 18px 14px 16px;
+  text-align: center; border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
+  display: flex; flex-direction: column;
 }
-.rw-card.ok { border-color: #b6e2c8; background: linear-gradient(160deg, #fff, #f0fbf4); }
-.rw-card.ok .rw-cost { background: var(--green); border-color: var(--green); color: #fff; }
-.rw-card .rw-got {
-  position: absolute; top: -8px; right: -6px; background: var(--green); color: #fff;
-  border-radius: 999px; font-size: 11px; font-weight: 900; padding: 3px 9px;
-  box-shadow: 0 3px 8px rgba(88,192,125,.4); display: none;
+.r-card .rc-emoji { font-size: 34px; line-height: 1; margin-bottom: 9px; }
+.r-card .rc-name { font-size: 14.5px; font-weight: 900; color: var(--brown); line-height: 1.35; }
+.r-card .rc-cost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  font-size: 13.5px; font-weight: 900; color: #e8a10c; margin: 9px 0 11px;
 }
-.rw-card.got .rw-got { display: block; }
+.r-card .rc-btn {
+  margin-top: auto; border: none; border-radius: 12px;
+  padding: 10px; font-size: 14px; font-weight: 900; color: #fff; cursor: pointer;
+  background: linear-gradient(135deg, #7bc3ee, var(--pink-deep));
+  font-family: inherit; transition: transform .14s;
+}
+.r-card .rc-btn:active { transform: scale(.96); }
+.r-card .rc-btn:disabled {
+  background: #f0e6eb; color: #c0aab6; cursor: not-allowed;
+}
+.r-card .rc-btn.owned {
+  background: linear-gradient(135deg, #9be3b8, var(--green)); color: #fff;
+}
 
-/* ===== 宠物卡 ===== */
+/* ============ 今日配套资源 ============ */
+.res-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+.res-tag {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #fff; border: 2px solid #d6eaf9; border-radius: 999px;
+  padding: 9px 17px; font-size: 14px; font-weight: 800; color: var(--brown);
+  cursor: pointer; transition: all .16s; box-shadow: 0 3px 10px rgba(47,134,201,.07);
+}
+.res-tag:active { transform: scale(.96); }
+.res-tag:hover { border-color: #bcd9f2; background: var(--pink-light); }
+
+/* ============ 任务列表（学科页） ============ */
+.task-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.t-item {
+  background: #fff; border-radius: 18px; padding: 17px 18px;
+  display: flex; align-items: center; gap: 14px;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
+  cursor: pointer; transition: all .17s; position: relative; overflow: hidden;
+}
+.t-item:active { transform: scale(.975); }
+.t-item.done { background: linear-gradient(160deg, #f2fcf6 0%, #e8f8ef 100%); border-color: #c8ead6; }
+.t-item .t-ic { width: 40px; height: 40px; flex: 0 0 auto; }
+.t-item .t-info { flex: 1; min-width: 0; }
+.t-item .t-name { font-size: 16px; font-weight: 900; color: var(--brown); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-item .t-tip { font-size: 12.5px; color: var(--brown-light); font-weight: 700; margin-top: 3px; }
+.t-item .t-check {
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%;
+  border: 2.5px dashed #f3d6e4; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 900; color: transparent; transition: all .2s;
+}
+.t-item.done .t-check {
+  border: 2.5px solid var(--green); background: var(--green); color: #fff;
+}
+.t-item .t-plus {
+  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  font-size: 15px; font-weight: 900; color: var(--pink-deep);
+  pointer-events: none; animation: plusUp 1s ease-out forwards;
+}
+@keyframes plusUp {
+  0% { opacity: 0; transform: translateY(0); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-34px); }
+}
+
+/* 学科页进度条 */
+.page-prog {
+  background: #fff; border-radius: 16px; padding: 15px 20px;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow); margin-bottom: 18px;
+}
+.page-prog .pp-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13.5px; font-weight: 800; color: var(--brown-light); margin-bottom: 8px;
+}
+.page-prog .pp-top b { font-size: 17px; color: var(--title); }
+.page-prog .pp-bar { height: 11px; background: #fbe8f1; border-radius: 999px; overflow: hidden; }
+.page-prog .pp-bar i {
+  display: block; height: 100%; border-radius: 999px; width: 0;
+  background: linear-gradient(90deg, #8ecdf0, var(--pink-deep)); transition: width .45s;
+}
+
+/* ============ 课表页 ============ */
+.week-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)); gap: 14px; align-items: stretch; }
+.day-col {
+  background: #fff; border-radius: 18px; padding: 16px;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
+}
+.day-col.today { border-color: #bcd9f2; background: linear-gradient(160deg,#fff 0%,#f2f9fe 100%); box-shadow: 0 8px 26px rgba(47,134,201,.18); }
+.day-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 1.5px dashed #d6eaf9;
+}
+.day-head .dh-name { font-size: 16px; font-weight: 900; color: var(--title); }
+.day-head .dh-badge {
+  margin-left: auto; font-size: 11px; font-weight: 900; color: #fff;
+  background: var(--pink); padding: 2px 9px; border-radius: 999px;
+}
+.slot { display: flex; align-items: center; gap: 9px; padding: 7px 0; }
+.slot .sl-time {
+  flex: 0 0 auto; font-size: 12px; font-weight: 900; color: var(--pink-deep);
+  background: var(--pink-light); border-radius: 7px; padding: 3px 8px;
+  min-width: 52px; text-align: center;
+}
+.slot .sl-tx { font-size: 13.5px; font-weight: 800; color: var(--brown); }
+.slot.rest .sl-time { background: #eef7fd; color: var(--blue); }
+.slot.rest .sl-tx { color: #7c9db5; }
+
+/* ============ 做家务页 ============ */
+.garden-top {
+  background: linear-gradient(160deg, #f2fcf6 0%, #e6f8ee 100%);
+  border: 2px solid #c8ead6; border-radius: var(--radius);
+  padding: 22px; text-align: center; margin-bottom: 18px;
+  box-shadow: var(--card-shadow); position: relative; overflow: hidden;
+}
+.garden-top::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 54px;
+  background: linear-gradient(180deg, transparent, rgba(155,227,184,.32));
+}
+.garden-sky { position: relative; z-index: 1; }
+.garden-plot { width: 150px; height: 150px; margin: 0 auto 4px; display: block; }
+.garden-top .g-stage-name { font-size: 20px; font-weight: 900; color: #3d9c63; position: relative; z-index: 1; }
+.garden-top .g-stage-sub { font-size: 13px; color: #6fae8a; font-weight: 700; margin-top: 5px; position: relative; z-index: 1; }
+.garden-energy {
+  margin-top: 16px; position: relative; z-index: 1;
+  display: inline-flex; align-items: center; gap: 10px;
+  background: #fff; border: 2px solid #c8ead6; border-radius: 999px;
+  padding: 8px 20px;
+}
+.garden-energy .ge-tx { font-size: 13.5px; font-weight: 900; color: #3d9c63; }
+.garden-energy .ge-bar { width: 130px; height: 11px; background: #e6f4eb; border-radius: 999px; overflow: hidden; }
+.garden-energy .ge-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#9be3b8,var(--green)); border-radius: 999px; transition: width .5s; }
+.habit-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+
+/* ============ 错题本 ============ */
+.wrong-form {
+  background: #fff; border-radius: 18px; padding: 18px 20px; margin-bottom: 18px;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
+}
+.wf-row { display: flex; gap: 10px; margin-bottom: 11px; flex-wrap: wrap; }
+.wf-row > * { flex: 1; min-width: 130px; }
+.wf-label { font-size: 13px; font-weight: 900; color: var(--brown-light); margin-bottom: 6px; display: block; }
+.inp {
+  width: 100%; border: 2px solid #f3e0d4; border-radius: 12px;
+  padding: 11px 14px; font-size: 15px; font-family: inherit; font-weight: 700;
+  color: var(--brown); background: #fffdfb; outline: none;
+  -webkit-user-select: text; user-select: text;
+}
+.inp:focus { border-color: #bcd9f2; background: #fff; }
+select.inp { cursor: pointer; }
+.wf-add {
+  border: none; border-radius: 12px; padding: 12px 26px;
+  font-size: 15px; font-weight: 900; color: #fff; cursor: pointer;
+  background: linear-gradient(135deg, #7bc3ee, var(--pink-deep));
+  font-family: inherit; transition: transform .14s;
+}
+.wf-add:active { transform: scale(.96); }
+.wrong-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.ws-chip {
+  background: #fff; border: 2px solid #d6eaf9; border-radius: 14px;
+  padding: 10px 16px; font-size: 13px; font-weight: 900; color: var(--brown-light);
+  display: flex; align-items: center; gap: 7px;
+}
+.ws-chip b { font-size: 17px; color: var(--title); }
+.wrong-list { display: flex; flex-direction: column; gap: 12px; }
+.w-item {
+  background: #fff; border-radius: 16px; padding: 15px 18px;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
+  display: flex; align-items: center; gap: 14px;
+}
+.w-item.fixed { background: #f7fdf9; border-color: #d6efe0; }
+.w-item .w-sub {
+  flex: 0 0 auto; font-size: 12px; font-weight: 900; color: #fff;
+  background: var(--blue); border-radius: 8px; padding: 4px 11px;
+}
+.w-item .w-body { flex: 1; min-width: 0; }
+.w-item .w-q { font-size: 15px; font-weight: 900; color: var(--brown); word-break: break-word; }
+.w-item .w-why { font-size: 12.5px; color: var(--brown-light); font-weight: 700; margin-top: 4px; word-break: break-word; }
+.w-item .w-act { display: flex; gap: 8px; flex: 0 0 auto; }
+.w-btn {
+  border: 2px solid #f3d6e4; background: #fff; border-radius: 10px;
+  padding: 8px 13px; font-size: 13px; font-weight: 900; color: var(--pink-deep);
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.w-btn:active { transform: scale(.95); }
+.w-btn.ok { border-color: #c8ead6; color: #3d9c63; }
+.w-btn.ok.on { background: var(--green); border-color: var(--green); color: #fff; }
+.w-empty {
+  text-align: center; padding: 44px 20px; color: #a3c3dc;
+  font-size: 14.5px; font-weight: 800;
+}
+.w-empty .we-ic { width: 62px; height: 62px; margin: 0 auto 14px; opacity: .5; display: block; }
+
+/* ============ 宠物页（复用） ============ */
+.pet-wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; align-items: stretch; }
 .pet-card {
-  background: linear-gradient(170deg, #ffffff 0%, #f0f8fe 100%);
-  border: 2px solid #d6eaf9; border-radius: var(--radius);
-  box-shadow: var(--card-shadow); padding: 20px 18px 18px; margin-bottom: 24px;
+  background: #fff; border-radius: var(--radius); padding: 20px;
+  border: 2px solid #d6eaf9; box-shadow: var(--card-shadow);
 }
-.pet-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-.pet-title-row .p-ic { width: 36px; height: 36px; }
-.pet-title-row h3 { font-size: 18px; font-weight: 900; color: var(--title); flex: 1; }
+.pet-head { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; flex-wrap: wrap; }
+.pet-head .p-ic { width: 34px; height: 34px; }
+.pet-head h3 { font-size: 18px; font-weight: 900; color: var(--title); }
 .mood-tag {
-  font-size: 12px; font-weight: 900; border-radius: 999px; padding: 4px 12px;
-  background: var(--green-light); color: #2f9e5e; border: 2px solid #c8ead6;
+  margin-left: auto; font-size: 12.5px; font-weight: 900;
+  color: #3d9c63; background: var(--green-light); border-radius: 999px; padding: 5px 14px;
 }
-.mood-tag.sick { background: #fdeaea; color: #d84a4a; border-color: #f5c4c4; }
-.stage { max-width: 340px; margin: 0 auto; position: relative; }
-.stage svg { width: 100%; height: auto; display: block; cursor: pointer; }
-.bubble-say {
-  position: relative; max-width: 300px; margin: 2px auto 12px;
-  background: #fff; border: 2px solid #d6eaf9; border-radius: 16px;
-  padding: 9px 14px; font-size: 13.5px; font-weight: 800; color: var(--navy); text-align: center;
+.mood-tag.sick { color: #d84a4a; background: #fdeaea; }
+.stage {
+  position: relative; width: 100%; aspect-ratio: 300 / 290;
+  background: radial-gradient(ellipse at 50% 88%, #e8f4fc 0%, transparent 62%);
+  border-radius: 18px; overflow: hidden; cursor: pointer;
 }
-.bubble-say::after {
-  content: ''; position: absolute; top: -9px; left: 50%; margin-left: -7px;
-  border: 7px solid transparent; border-bottom-color: #d6eaf9;
+#kekeSvg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.status-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 9px 16px; margin-top: 15px;
 }
-.bubble-say::before {
-  content: ''; position: absolute; top: -6px; left: 50%; margin-left: -5px;
-  border: 5px solid transparent; border-bottom-color: #fff; z-index: 1;
-}
-/* 状态条 */
-.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin: 4px 0 14px; }
 .st { display: flex; align-items: center; gap: 8px; }
-.st .si { width: 21px; height: 21px; flex: 0 0 auto; }
-.st .sl { font-size: 12px; font-weight: 900; color: var(--navy-light); width: 32px; }
-.st .sb { flex: 1; height: 10px; background: #e2eef8; border-radius: 999px; overflow: hidden; }
-.st .sf { display: block; height: 100%; width: 0; border-radius: 999px; transition: width .5s; }
-/* 互动按钮 */
-.pet-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.st .si { width: 19px; height: 19px; flex: 0 0 auto; }
+.st .sl { font-size: 12px; font-weight: 900; color: var(--brown-light); flex: 0 0 auto; }
+.st .sb { flex: 1; height: 9px; background: #fbe8f1; border-radius: 999px; overflow: hidden; }
+.st .sb .sf { height: 100%; width: 0; border-radius: 999px; transition: width .5s; }
+.pet-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
 .pbtn {
-  border: 2.5px solid #bcd9f2; background: #fff; border-radius: 15px;
-  padding: 9px 4px 7px; cursor: pointer; text-align: center; transition: all .15s;
+  background: #fff; border: 2.5px solid #d6eaf9; border-radius: 15px;
+  padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  cursor: pointer; transition: all .16s; font-family: inherit;
 }
 .pbtn:active { transform: scale(.95); }
-.pbtn:disabled { opacity: .45; }
-.pbtn .pi { display: block; font-size: 21px; line-height: 1.2; }
-.pbtn .pl { display: block; font-size: 12.5px; font-weight: 900; color: var(--blue-deep); margin-top: 2px; }
+.pbtn:disabled { opacity: .45; cursor: not-allowed; }
+.pbtn .pi { font-size: 23px; line-height: 1; }
+.pbtn .pl { font-size: 12.5px; font-weight: 900; color: var(--brown); }
 .pet-shop-btn {
-  width: 100%; margin-top: 10px; border: none; border-radius: 15px;
-  background: linear-gradient(135deg, #8ecdf0, #2f86c9);
-  color: #fff; font-size: 14.5px; font-weight: 900; padding: 12px; cursor: pointer;
-  box-shadow: 0 6px 16px rgba(47,134,201,.3);
+  width: 100%; margin-top: 12px; border: none; border-radius: 15px;
+  padding: 15px; font-size: 15.5px; font-weight: 900; color: #fff;
+  background: linear-gradient(135deg, #7bc3ee, var(--pink-deep));
+  cursor: pointer; font-family: inherit; transition: transform .14s;
+  box-shadow: 0 6px 18px rgba(47,134,201,.28);
 }
-.pet-shop-btn:active { transform: scale(.98); }
+.pet-shop-btn:active { transform: scale(.97); }
+.bubble-say {
+  background: var(--pink-light); border: 2px solid #bcd9f2; border-radius: 16px;
+  padding: 12px 18px; font-size: 14.5px; font-weight: 800; color: var(--pink-deep);
+  margin-top: 12px; text-align: center; min-height: 46px;
+  display: flex; align-items: center; justify-content: center;
+}
 
-/* ===== 弹层 ===== */
+/* ============ 弹层（复用） ============ */
 .overlay {
-  position: fixed; inset: 0; z-index: 90; display: none;
-  background: rgba(39,73,109,.4); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-  align-items: flex-end; justify-content: center;
+  position: fixed; inset: 0; background: rgba(47,134,201,.28);
+  backdrop-filter: blur(4px); z-index: 100;
+  display: none; align-items: center; justify-content: center; padding: 20px;
 }
 .overlay.show { display: flex; }
 .dialog {
-  background: #fff; border-radius: 26px 26px 0 0; width: 100%; max-width: 560px;
-  max-height: 86vh; overflow-y: auto; padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
-  animation: dlgUp .28s cubic-bezier(.3,1.1,.4,1);
+  background: #fff; border-radius: 24px; padding: 26px 24px;
+  width: 100%; max-width: 460px; max-height: 86vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(31,107,176,.3);
+  animation: dlgIn .24s ease-out;
 }
-@keyframes dlgUp { from { transform: translateY(60px); opacity: 0; } to { transform: none; opacity: 1; } }
-.dialog h3 { font-size: 18px; font-weight: 900; color: var(--title); text-align: center; }
-.d-sub { text-align: center; font-size: 13px; color: var(--navy-light); font-weight: 700; margin: 5px 0 15px; }
-.dlg-close {
-  margin-top: 16px; width: 100%; border: 2.5px solid #d6eaf9; background: #f4f9fe;
-  border-radius: 15px; padding: 12px; font-size: 15px; font-weight: 900; color: var(--navy-light); cursor: pointer;
+@keyframes dlgIn { from { opacity: 0; transform: scale(.92) translateY(16px); } to { opacity: 1; transform: none; } }
+.dialog h3 { font-size: 19px; color: var(--title); font-weight: 900; margin-bottom: 6px; }
+.d-sub { font-size: 13.5px; color: var(--brown-light); font-weight: 700; margin-bottom: 17px; }
+.dlg-close { width: 100%; margin-top: 12px; }
+.btn-full {
+  border: none; border-radius: 13px; padding: 14px;
+  font-size: 15px; font-weight: 900; color: #fff; cursor: pointer;
+  background: linear-gradient(135deg, #7bc3ee, var(--pink-deep));
+  font-family: inherit; transition: transform .14s;
 }
-.dlg-close:active { transform: scale(.98); }
+.btn-full:active { transform: scale(.97); }
+.btn-full.ghost { background: #f7eef3; color: var(--brown-light); }
 
 /* 商店网格 */
-.shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
 .shop-item {
-  border: 2.5px solid #d6eaf9; border-radius: 16px; padding: 12px 6px 10px;
-  text-align: center; cursor: pointer; background: #fff; transition: all .15s;
+  background: #fff9f4; border: 2.5px solid #f3e0d4; border-radius: 16px;
+  padding: 13px 8px; text-align: center; cursor: pointer; transition: transform .14s;
 }
 .shop-item:active { transform: scale(.95); }
-.shop-item.no { opacity: .5; }
-.shop-item .si2 { font-size: 30px; line-height: 1.2; }
-.shop-item .sn2 { font-size: 13.5px; font-weight: 900; color: var(--navy); margin-top: 3px; }
-.shop-item .sd2 { font-size: 11px; color: var(--navy-light); font-weight: 700; margin-top: 2px; line-height: 1.3; }
-.shop-item .sc2 { margin-top: 6px; display: inline-block; background: #fff8e6; border: 2px solid #ffe9b8;
-  color: var(--gold-deep); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 900; }
+.shop-item.no { opacity: .48; }
+.shop-item .si2 { font-size: 32px; }
+.shop-item .sn2 { font-size: 13.5px; font-weight: 900; margin-top: 4px; }
+.shop-item .sd2 { font-size: 11px; color: var(--brown-light); margin-top: 3px; line-height: 1.4; }
+.shop-item .sc2 {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;
+  font-size: 13px; font-weight: 900; color: #e8a10c;
+  background: #fff4dc; padding: 3px 11px; border-radius: 999px;
+}
 
-/* 算术锁 */
-.math-q { text-align: center; margin: 6px 0 12px; }
-.math-q .q { font-size: 30px; font-weight: 900; color: var(--title); letter-spacing: 1px; }
-.math-q .hint { font-size: 11.5px; color: #a3c3dc; font-weight: 700; margin-top: 6px; }
+/* 算术锁（复用） */
+.math-q { text-align: center; margin: 6px 0 16px; }
+.math-q .q { font-size: 34px; font-weight: 900; color: var(--title); letter-spacing: 2px; }
+.math-q .hint { font-size: 12.5px; color: var(--brown-light); font-weight: 700; margin-top: 8px; }
 .math-input {
-  width: 100%; text-align: center; font-size: 22px; font-weight: 900; color: var(--blue-deep);
-  border: 2.5px solid #bcd9f2; border-radius: 14px; padding: 12px; background: #f4f9fe; outline: none;
+  width: 100%; border: 2.5px solid #f3e0d4; border-radius: 14px;
+  padding: 15px; font-size: 26px; font-weight: 900; text-align: center;
+  color: var(--title); background: #fffdfb; outline: none; font-family: inherit;
 }
-.math-input.shake { animation: shakeX .4s; border-color: #f26d6d; }
-@keyframes shakeX { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-.num-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; }
+.math-input.shake { animation: shake .4s; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-9px); }
+  40%,80% { transform: translateX(9px); }
+}
+.num-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 13px; }
 .num-pad button {
-  border: none; border-radius: 14px; padding: 15px 0; font-size: 21px; font-weight: 900;
-  background: #e8f4fc; color: var(--blue-deep); cursor: pointer;
+  background: #fff9f4; border: 2.5px solid #f3e0d4; border-radius: 13px;
+  padding: 15px; font-size: 20px; font-weight: 900; color: var(--brown);
+  cursor: pointer; font-family: inherit; transition: all .13s;
 }
-.num-pad button:active { transform: scale(.95); background: #d6eaf9; }
-.num-pad button.del { background: #fdeef5; color: #d4517f; font-size: 15px; }
-.num-pad button.okk { background: var(--green); color: #fff; }
+.num-pad button:active { transform: scale(.94); background: #e8f4fc; }
+.num-pad button.del { font-size: 15px; color: var(--brown-light); }
 
 /* 家长面板 */
 .p-row {
-  display: flex; align-items: center; gap: 10px;
-  background: #f4f9fe; border: 2px solid #e0effa; border-radius: 15px;
-  padding: 12px 14px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 11px; padding: 14px 0;
+  border-bottom: 1.5px solid #d6eaf9;
 }
+.p-row:last-child { border-bottom: none; }
 .p-row .pl2 { flex: 1; min-width: 0; }
-.p-row .t { font-size: 14.5px; font-weight: 900; color: var(--navy); }
-.p-row .s { font-size: 11.5px; color: var(--navy-light); font-weight: 700; margin-top: 2px; }
+.p-row .pl2 .t { font-size: 14.5px; font-weight: 900; color: var(--brown); }
+.p-row .pl2 .s { font-size: 12px; color: var(--brown-light); font-weight: 700; margin-top: 3px; }
 .p-btn-sm {
-  flex: 0 0 auto; border: 2px solid #bcd9f2; background: #fff; color: var(--blue-deep);
-  border-radius: 11px; padding: 8px 13px; font-size: 13px; font-weight: 900; cursor: pointer;
+  border: 2.5px solid #f3d6e4; background: #fff; border-radius: 11px;
+  padding: 9px 15px; font-size: 13.5px; font-weight: 900; color: var(--pink-deep);
+  cursor: pointer; font-family: inherit; flex: 0 0 auto; transition: transform .14s;
 }
-.p-btn-sm:active { transform: scale(.94); background: #f0f8fe; }
-.p-btn-sm.danger { border-color: #f5c4c4; color: #d84a4a; }
-.admin-box { margin: 4px 0 12px; }
-.ad-cat {
-  border: 2px solid #d6eaf9; border-radius: 16px; padding: 11px 13px; margin-bottom: 10px; background: #fff;
-}
-.ad-cat-head { display: flex; align-items: center; gap: 8px; }
-.ad-cat-head .ad-ic { width: 30px; height: 30px; flex: 0 0 auto; }
-.ad-cat-head b { font-size: 14.5px; color: var(--navy); flex: 1; }
-.ad-cat-head .ad-cnt { font-size: 11.5px; color: var(--navy-light); font-weight: 800; }
-.ad-del {
-  border: 2px solid #f5c4c4; background: #fff; color: #d84a4a;
-  border-radius: 9px; padding: 5px 10px; font-size: 12px; font-weight: 900; cursor: pointer; flex: 0 0 auto;
-}
-.ad-del:active { transform: scale(.93); }
-.ad-task {
-  display: flex; align-items: center; gap: 8px; margin-top: 8px;
-  background: #f4f9fe; border-radius: 11px; padding: 8px 11px;
-}
-.ad-task span { flex: 1; font-size: 13.5px; font-weight: 800; color: var(--navy); }
-.ad-task .ad-del { padding: 4px 9px; font-size: 11.5px; }
-.ad-add { display: flex; gap: 8px; margin-top: 10px; }
-.ad-add input {
-  flex: 1; min-width: 0; border: 2px solid #bcd9f2; border-radius: 11px;
-  padding: 9px 12px; font-size: 13.5px; font-weight: 700; color: var(--navy); outline: none; background: #fff;
-}
-.ad-add input:focus { border-color: var(--blue); }
-.ad-add button {
-  flex: 0 0 auto; border: none; border-radius: 11px; background: var(--blue);
-  color: #fff; padding: 9px 15px; font-size: 13px; font-weight: 900; cursor: pointer;
-}
-.ad-add button:active { transform: scale(.94); }
-.ad-sep { font-size: 13.5px; font-weight: 900; color: var(--title); margin: 16px 0 9px; display: flex; align-items: center; gap: 7px; }
-.ad-sep::after { content: ''; flex: 1; height: 2px; background: #e0effa; border-radius: 2px; }
+.p-btn-sm:active { transform: scale(.95); }
 
-/* toast / 撒花 */
-#toast {
-  position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
-  background: var(--navy); color: #fff; border-radius: 999px; padding: 11px 22px;
-  font-size: 14px; font-weight: 800; opacity: 0; pointer-events: none; z-index: 120;
-  transition: all .3s; max-width: 86vw; text-align: center; box-shadow: 0 8px 24px rgba(39,73,109,.35);
+/* 浮层提示 */
+.float-tip {
+  position: absolute; right: 16px; top: 4px;
+  font-size: 15px; font-weight: 900; color: var(--pink-deep);
+  pointer-events: none; animation: plusUp 1s ease-out forwards;
 }
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.celebrate { position: fixed; inset: 0; pointer-events: none; z-index: 110; display: none; overflow: hidden; }
+#toast {
+  position: fixed; left: 50%; top: 20px; transform: translateX(-50%) translateY(-90px);
+  background: rgba(44,95,138,.94); color: #fff;
+  padding: 12px 24px; border-radius: 999px; font-size: 14.5px; font-weight: 800;
+  z-index: 200; transition: transform .34s cubic-bezier(.34,1.56,.64,1);
+  max-width: 88vw; text-align: center; box-shadow: 0 8px 26px rgba(44,95,138,.3);
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+.celebrate {
+  position: fixed; inset: 0; pointer-events: none; z-index: 150; display: none;
+}
 .celebrate.show { display: block; }
 
-.foot { text-align: center; font-size: 12px; color: #a3c3dc; font-weight: 700; padding: 6px 0 10px; }
-
-@media (max-width: 420px) {
-  .hero .h-logo { width: 62px; height: 62px; }
-  .hero .h-title { font-size: 18.5px; }
-  .shop-grid { grid-template-columns: repeat(2, 1fr); }
-  .status-grid { grid-template-columns: 1fr 1fr; gap: 7px 10px; }
-  .tb-pill { padding: 5px 9px; font-size: 12.5px; }
-  .topbar .t-name { font-size: 14.5px; }
+/* ============ 响应式 ============ */
+@media (max-width: 1023px) {
+  .hero { grid-template-columns: 1fr; }
+  .pet-wrap { grid-template-columns: 1fr; }
+  .grid9 { grid-template-columns: repeat(3, 1fr); }
+  .reward-grid { grid-template-columns: repeat(3, 1fr); }
 }
-
+@media (max-width: 760px) {
+  .topbar { display: flex; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 58;
+    transform: translateX(-104%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow: 8px 0 40px rgba(44,95,138,.18);
+    padding-top: max(18px, env(safe-area-inset-top));
+  }
+  .sidebar.open { transform: none; }
+  .content {
+    padding: 16px 14px 40px;
+    padding-top: calc(70px + env(safe-area-inset-top));
+  }
+  .grid9 { grid-template-columns: repeat(2, 1fr); }
+  .reward-grid { grid-template-columns: repeat(2, 1fr); }
+  .g-card { padding: 16px 10px 13px; }
+  .g-card .gc-ic { width: 42px; height: 42px; }
+  .g-card .gc-name { font-size: 14px; }
+  .page-head h2 { font-size: 19px; }
+  .page-head .ph-ic { width: 32px; height: 32px; }
+  .page-head .ph-sub { margin-left: 0; width: 100%; }
+  .task-list { grid-template-columns: 1fr; }
+  .habit-list { grid-template-columns: 1fr; }
+  .week-wrap { grid-template-columns: 1fr; }
+  .shop-grid { grid-template-columns: repeat(2, 1fr); }
+  .what-form { padding: 15px; }
+  .user-info h3 { font-size: 17px; }
+}
+@media (max-width: 420px) {
+  .grid9 { gap: 10px; }
+  .reward-grid { gap: 10px; }
+  .pet-btns { grid-template-columns: repeat(2, 1fr); }
+}
+/* ============================================================
+   宠物泡泡 · 动画（class 版）
+   ============================================================ */
 #kekeBody { animation: breathe 3.4s ease-in-out infinite; transform-origin: 150px 285px; }
 @keyframes breathe { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.03) scaleX(1.01)} }
 .keke-eyes-closed { opacity: 0; animation: blink 4.6s infinite; }
@@ -469,194 +747,468 @@ body::before {
 .keke-spray { animation: sprayWave 2.2s ease-in-out infinite; transform-origin: 150px 150px; }
 @keyframes sprayWave { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(.88)} }
 
+
+/* ============ 家长面板：分类与任务管理 ============ */
+.ad-sep { font-size: 14px; font-weight: 900; color: var(--title); margin: 18px 0 10px; display: flex; align-items: center; gap: 7px; }
+.ad-sep::after { content: ''; flex: 1; height: 2px; background: #d6eaf9; border-radius: 2px; }
+.admin-box { max-height: 38vh; overflow-y: auto; padding-right: 2px; }
+.ad-cat { border: 2px solid #d6eaf9; border-radius: 16px; padding: 11px 13px; margin-bottom: 10px; background: #fff; }
+.ad-cat-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ad-cat-head .ad-ic { width: 30px; height: 30px; flex: 0 0 auto; }
+.ad-cat-head b { font-size: 14.5px; color: var(--brown); flex: 1; min-width: 60px; }
+.ad-cat-head .ad-cnt { font-size: 11.5px; color: var(--brown-light); font-weight: 800; }
+.ad-del { border: 2px solid #f5c4c4; background: #fff; color: #d84a4a; border-radius: 9px; padding: 5px 10px; font-size: 12px; font-weight: 900; cursor: pointer; flex: 0 0 auto; }
+.ad-del:active { transform: scale(.93); }
+.ad-task { display: flex; align-items: center; gap: 8px; margin-top: 8px; background: #fdf6f9; border-radius: 11px; padding: 8px 11px; }
+.ad-task span { flex: 1; font-size: 13.5px; font-weight: 800; color: var(--brown); }
+.ad-task .ad-del { padding: 4px 9px; font-size: 11.5px; }
+.ad-add { display: flex; gap: 8px; margin-top: 10px; }
+.ad-add input { flex: 1; min-width: 0; border: 2px solid #c3e1f5; border-radius: 11px; padding: 9px 12px; font-size: 13.5px; font-weight: 700; color: var(--brown); outline: none; background: #fff; }
+.ad-add input:focus { border-color: var(--pink); }
+.ad-add button { flex: 0 0 auto; border: none; border-radius: 11px; background: var(--pink-deep); color: #fff; padding: 9px 15px; font-size: 13px; font-weight: 900; cursor: pointer; }
+.ad-add button:active { transform: scale(.94); }
 </style>
 </head>
 <body>
 
-<!-- 顶部粘性栏 -->
-<header class="topbar">
-  <svg class="t-logo"><use href="#ic-logo"/></svg>
-  <div class="t-name">Eric的学习工作台</div>
-  <span class="tb-pill stars">⭐<span id="tbStars">0</span></span>
-  <span class="tb-pill pts">🏅<span id="tbPts">0</span>分</span>
-  <div class="tb-lock" onclick="openParent()">🔒</div>
-</header>
+<div class="app">
 
-<main class="wrap">
+  <!-- 移动端顶部栏 -->
+  <div class="topbar">
+    <div class="hamb" onclick="toggleNav()"><span></span><span></span><span></span></div>
+    <div class="tb-title" id="tbTitle">首页</div>
+    <div class="tb-stars">⭐<span id="tbStars">0</span></div>
+  </div>
 
-  <!-- 英雄区 -->
-  <div class="hero">
-    <svg class="h-logo"><use href="#ic-logo"/></svg>
-    <div class="h-info">
-      <div class="h-title">Eric的学习工作台</div>
-      <div class="h-sub">和鲸鱼泡泡一起 · 每天进步一点点 🐳</div>
-      <div class="h-date">📅 <span id="homeDate">—</span></div>
+  <!-- 侧边导航 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg class="bg-logo"><use href="#ic-logo"/></svg>
+      <div class="bg-tx">Eric的学习台<small>和小鲸鱼泡泡一起</small></div>
     </div>
-  </div>
-
-  <!-- 今日进度 -->
-  <div class="prog-card">
-    <div class="prog-top">
-      <span class="pt-name">今日完成度</span>
-      <span class="pt-val"><b id="homePct">0%</b>&nbsp; <span id="homeCnt">(0/0)</span></span>
+    <div class="nav-item active" data-page="home" onclick="go('home')">
+      <svg class="nv-ic"><use href="#ic-home"/></svg><span>首页</span>
+      <span class="nv-dot" id="dot-home"></span>
     </div>
-    <div class="prog-bar"><i id="homeBar"></i></div>
-  </div>
-
-  <!-- 任务区 -->
-  <div class="sec-head">
-    <svg class="s-ic"><use href="#ic-whale"/></svg>
-    <span class="s-tx">今日打卡</span>
-    <span class="s-badge" id="taskBadge">0/0</span>
-  </div>
-  <div id="catWrap"></div>
-
-  <!-- 奖励中心 -->
-  <div class="sec-head">
-    <svg class="s-ic"><use href="#ic-star"/></svg>
-    <span class="s-tx">奖励中心</span>
-  </div>
-  <div class="reward-head">
-    <div class="rh-tx">完成一项任务 +2 分，攒分兑换心愿奖励</div>
-    <div class="rh-pts">🏅 <span id="rwPts">0</span> 分</div>
-  </div>
-  <div class="reward-grid" id="rewardGrid"></div>
-
-  <!-- 宠物泡泡 -->
-  <div class="sec-head">
-    <svg class="s-ic"><use href="#ic-whale"/></svg>
-    <span class="s-tx">我的宠物泡泡</span>
-  </div>
-  <div class="pet-card">
-    <div class="pet-title-row">
-      <svg class="p-ic"><use href="#ic-whale"/></svg>
-      <h3>泡泡 · Eric的小鲸鱼</h3>
-      <span class="mood-tag" id="moodTag">状态很棒</span>
+    <div class="nav-item" data-page="garden" onclick="go('garden')">
+      <svg class="nv-ic"><use href="#ic-toybox"/></svg><span>做家务</span>
+      <span class="nv-dot" id="dot-garden"></span>
     </div>
-    <div class="stage" id="stage">
-      <svg id="kekeSvg" viewBox="0 0 300 320">
-                    <ellipse cx="150" cy="298" rx="96" ry="13" fill="#cde6f7" opacity=".75"/>
-                                  <g id="kekeBody">
-                      <g class="keke-tail">
-                        <path d="M240 186 q36 -28 52 -16 q-6 26 -28 36 q24 10 20 34 q-24 6 -44 -20 Z" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
-                      </g>
-                      <g class="keke-ears">
-                        <path d="M64 208 q-34 2 -44 32 q24 14 48 -8 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
-                        <path d="M236 208 q34 2 44 32 q-24 14 -48 -8 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
-                      </g>
-                      <ellipse cx="150" cy="226" rx="102" ry="72" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2.5"/>
-                      <path d="M52 246 q98 78 196 0 q-14 46 -98 46 q-84 0 -98 -46 Z" fill="#fdfefe"/>
-                      <path d="M136 158 q12 -24 28 -18 q2 18 -10 26 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
-                      <g class="keke-spray">
-                        <path d="M150 128 V 94" stroke="#7fc9ef" stroke-width="7" stroke-linecap="round"/>
-                        <path d="M132 122 q-7 -12 -4 -24" stroke="#7fc9ef" stroke-width="5" fill="none" stroke-linecap="round"/>
-                        <path d="M168 122 q7 -12 4 -24" stroke="#7fc9ef" stroke-width="5" fill="none" stroke-linecap="round"/>
-                        <circle cx="122" cy="90" r="7" fill="#a5dcf6"/>
-                        <circle cx="178" cy="90" r="7" fill="#a5dcf6"/>
-                        <circle cx="150" cy="76" r="8" fill="#a5dcf6"/>
-                        <circle cx="137" cy="66" r="5" fill="#c8ecfa"/>
-                        <circle cx="164" cy="64" r="5" fill="#c8ecfa"/>
-                      </g>
-                      <g class="keke-eyes-open">
-                        <circle cx="118" cy="196" r="9.5" fill="#27496d"/>
-                        <circle cx="182" cy="196" r="9.5" fill="#27496d"/>
-                        <circle cx="121" cy="192.5" r="3.4" fill="#fff"/>
-                        <circle cx="185" cy="192.5" r="3.4" fill="#fff"/>
-                      </g>
-                      <g class="keke-eyes-closed">
-                        <path d="M109 198 q9 -11 18 0" stroke="#27496d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-                        <path d="M173 198 q9 -11 18 0" stroke="#27496d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-                      </g>
-                      <ellipse cx="100" cy="218" rx="13" ry="8" fill="#ffcad6" opacity=".85"/>
-                      <ellipse cx="200" cy="218" rx="13" ry="8" fill="#ffcad6" opacity=".85"/>
-                      <path class="keke-mouth-smile" d="M139 216 q11 10 22 0" stroke="#4a86b8" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-                      <path class="keke-mouth-chew" d="M143 218 q7 7 14 0 q-7 5 -14 0" fill="#3b7fc0"/>
-                      <path class="keke-mouth-open" d="M141 215 q9 13 18 0 q-9 6 -18 0" fill="#3b7fc0"/>
-                      <path class="keke-mouth-sad" d="M142 220 q8 -6 16 0" stroke="#4a86b8" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-                      <g class="keke-fx-carrot">
-                        <g transform="translate(100,232) rotate(-18)">
-                          <ellipse cx="13" cy="18" rx="15" ry="9" fill="#7fd0a8" stroke="#4fae7e" stroke-width="2.5"/>
-                          <path d="M26 18 l14 -9 v18 Z" fill="#7fd0a8" stroke="#4fae7e" stroke-width="2.5" stroke-linejoin="round"/>
-                          <circle cx="6" cy="16" r="2.6" fill="#27496d"/>
-                          <path d="M6 26 q7 5 14 0" stroke="#4fae7e" stroke-width="2" fill="none" stroke-linecap="round"/>
-                          <circle cx="36" cy="6" r="3" fill="#c8ecfa"/>
-                        </g>
-                      </g>
-                      <g class="keke-fx-ball">
-                        <circle cx="104" cy="252" r="21" fill="#ffd94d" stroke="#e8a10c" stroke-width="2.5"/>
-                        <path d="M88 242 q16 10 32 0 M88 262 q16 -10 32 0" stroke="#e8a10c" stroke-width="2.5" fill="none"/>
-                      </g>
-                      <g class="keke-fx-bubble"><circle cx="112" cy="176" r="12" fill="#fff" opacity=".72"/>
-                        <circle cx="94" cy="156" r="8" fill="#fff" opacity=".6"/>
-                        <circle cx="126" cy="150" r="6" fill="#fff" opacity=".55"/>
-                      </g>
-                      <g class="keke-fx-shower">
-                        <path d="M212 96 q0 -30 0 -46" stroke="#c9d6e0" stroke-width="6" stroke-linecap="round"/>
-                        <path d="M194 50 h36 q6 0 6 6 l-4 14 h-40 l-4 -14 q0 -6 6 -6 Z" fill="#dfe8ef" stroke="#b8c6d1" stroke-width="2.5"/>
-                        <g class="water">
-                          <path d="M200 74 v16" stroke="#8fd8f2" stroke-width="3.5" stroke-linecap="round"/>
-                          <path d="M212 74 v22" stroke="#8fd8f2" stroke-width="3.5" stroke-linecap="round"/>
-                          <path d="M224 74 v16" stroke="#8fd8f2" stroke-width="3.5" stroke-linecap="round"/>
-                          <path d="M206 96 v14" stroke="#a5e2f5" stroke-width="3" stroke-linecap="round"/>
-                          <path d="M218 98 v14" stroke="#a5e2f5" stroke-width="3" stroke-linecap="round"/>
-                        </g>
-                      </g>
-                      <g class="keke-fx-fever">
-                        <rect x="112" y="162" width="76" height="19" rx="9.5" fill="#bfe3ff" opacity=".94"/>
-                        <text x="150" y="176" text-anchor="middle" font-size="11" fill="#4a90c8" font-weight="bold">退热贴</text>
-                      </g>
-                      <g class="keke-fx-pill">
-                        <ellipse cx="196" cy="234" rx="15" ry="9" fill="#f26d6d" transform="rotate(-24 196 234)"/>
-                        <ellipse cx="204" cy="228" rx="15" ry="9" fill="#fff" stroke="#e8c4c4" stroke-width="1.6" transform="rotate(-24 204 228)"/>
-                      </g>
-                      <g class="keke-fx-heart">
-                        <path class="h1" d="M86 128 c-7-10-21-7-21 4 c0 9 11 15 21 23 c10-8 21-14 21-23 c0-11-14-14-21-4Z" fill="#ff8fb0" opacity="0"/>
-                        <path class="h2" d="M218 120 c-7-10-21-7-21 4 c0 9 11 15 21 23 c10-8 21-14 21-23 c0-11-14-14-21-4Z" fill="#ff8fb0" opacity="0"/>
-                        <path class="h3" d="M152 96 c-7-10-21-7-21 4 c0 9 11 15 21 23 c10-8 21-14 21-23 c0-11-14-14-21-4Z" fill="#ff8fb0" opacity="0"/>
-                      </g>
-                    </g>
-                  </svg>
+    <div class="nav-item" data-page="chinese" onclick="go('chinese')">
+      <svg class="nv-ic"><use href="#ic-schoolbook"/></svg><span>语文</span>
+      <span class="nv-dot" id="dot-chinese"></span>
     </div>
-    <div class="bubble-say" id="petSay">你好呀Eric！我是鲸鱼泡泡🐳</div>
-    <div class="status-grid">
-      <div class="st"><svg class="si"><use href="#ic-hunger"/></svg><span class="sl">饥饿</span><div class="sb"><div class="sf" id="sfHunger"></div></div></div>
-      <div class="st"><svg class="si"><use href="#ic-mood2"/></svg><span class="sl">心情</span><div class="sb"><div class="sf" id="sfMood"></div></div></div>
-      <div class="st"><svg class="si"><use href="#ic-clean"/></svg><span class="sl">清洁</span><div class="sb"><div class="sf" id="sfClean"></div></div></div>
-      <div class="st"><svg class="si"><use href="#ic-health"/></svg><span class="sl">健康</span><div class="sb"><div class="sf" id="sfHealth"></div></div></div>
+    <div class="nav-item" data-page="math" onclick="go('math')">
+      <svg class="nv-ic"><use href="#ic-math"/></svg><span>数学</span>
+      <span class="nv-dot" id="dot-math"></span>
     </div>
-    <div class="pet-btns">
-      <button class="pbtn" id="btnFeed" onclick="openFeed()"><span class="pi">🐟</span><span class="pl">喂食</span></button>
-      <button class="pbtn" id="btnPlay" onclick="doPlay()"><span class="pi">🎾</span><span class="pl">玩耍</span></button>
-      <button class="pbtn" id="btnBath" onclick="doBath()"><span class="pi">🛁</span><span class="pl">洗澡</span></button>
-      <button class="pbtn" id="btnHeal" onclick="doHeal()"><span class="pi">💊</span><span class="pl">治疗</span></button>
+    <div class="nav-item" data-page="english" onclick="go('english')">
+      <svg class="nv-ic"><use href="#ic-abc"/></svg><span>英语</span>
+      <span class="nv-dot" id="dot-english"></span>
     </div>
-    <button class="pet-shop-btn" onclick="openShop()">🛒 泡泡商店 · 用⭐给宠物买东西</button>
-  </div>
+    <div class="nav-item" data-page="sport" onclick="go('sport')">
+      <svg class="nv-ic"><use href="#ic-rope"/></svg><span>运动</span>
+      <span class="nv-dot" id="dot-sport"></span>
+    </div>
+    <div class="nav-item" data-page="reading" onclick="go('reading')">
+      <svg class="nv-ic"><use href="#ic-read"/></svg><span>每日阅读</span>
+      <span class="nv-dot" id="dot-reading"></span>
+    </div>
+    <div class="nav-item" data-page="schedule" onclick="go('schedule')">
+      <svg class="nv-ic"><use href="#ic-calendar"/></svg><span>课表</span>
+    </div>
+    <div class="nav-item" data-page="pet" onclick="go('pet')">
+      <svg class="nv-ic"><use href="#ic-whale"/></svg><span>宠物</span>
+      <span class="nv-dot" id="dot-pet"></span>
+    </div>
+    <div class="nav-item" data-page="wrong" onclick="go('wrong')">
+      <svg class="nv-ic"><use href="#ic-wrong"/></svg><span>错题本</span>
+      <span class="nv-dot" id="dot-wrong"></span>
+    </div>
+    <div id="customNav" style="display:contents"></div>
+    <div class="nav-item" onclick="openParent()" style="margin-top:8px;border-color:#d6eaf9">
+      <svg class="nv-ic"><use href="#ic-abc"/></svg><span>家长设置</span><span style="font-size:14px">🔒</span>
+    </div>
+    <div class="side-foot">每天进步一点点<br>🐳 泡泡陪着你</div>
+  </aside>
+  <div class="nav-mask" id="navMask" onclick="toggleNav()"></div>
 
-  <div class="foot">🐳 Eric 的学习工作台 · 数据保存在本机</div>
-</main>
+  <!-- 内容区 -->
+  <main class="content" id="content">
+    <!-- ==================== 首页 ==================== -->
+    <section class="page active" id="page-home">
+      <div class="hero">
+        <div class="hero-card">
+          <div class="user-row">
+            <div class="user-ava"><svg><use href="#ic-whale"/></svg></div>
+            <div class="user-info">
+              <h3>Eric <span style="font-size:15px">🐳</span></h3>
+              <div class="u-date" id="homeDate">—</div>
+              <div class="u-day" id="homeDay">—</div>
+            </div>
+          </div>
+          <div class="prog-line">
+            <div class="pl-tx">
+              <span>今日完成度</span>
+              <span><b id="homePct">0%</b> <span id="homeCnt" style="font-size:13px">(0/12)</span></span>
+            </div>
+            <div class="prog-bar"><div class="pb-fill" id="homeBar"></div></div>
+          </div>
+        </div>
+        <div class="hero-card encourage">
+          <div class="en-h">💙 今日鼓励</div>
+          <div class="en-tx" id="homeEncourage">保持好奇心，世界会给你带来很多惊喜！</div>
+        </div>
+      </div>
 
-<!-- 弹层：喂食 -->
+      <div class="sec-title">
+        <svg class="st-ic"><use href="#ic-whale"/></svg>
+        <span>今日打卡进度</span>
+        <span class="st-count" id="homeGridCnt">0/9</span>
+      </div>
+      <div class="grid9" id="homeGrid"></div>
+
+      <div class="sec-title">
+        <svg class="st-ic"><use href="#ic-tv"/></svg>
+        <span>奖励中心</span>
+      </div>
+      <div class="reward-head">
+        <div class="rh-tx">用星星兑换小奖励吧～</div>
+        <div class="rh-star">⭐<span id="homeStars">0</span></div>
+      </div>
+      <div class="reward-grid" id="homeRewards"></div>
+
+      <div class="sec-title">
+        <svg class="st-ic"><use href="#ic-music"/></svg>
+        <span>今日配套资源</span>
+      </div>
+      <div class="res-wrap" id="homeRes"></div>
+    </section>
+
+    <!-- ==================== 做家务 ==================== -->
+    <section class="page" id="page-garden">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-toybox"/></svg>
+        <h2>做家务打卡</h2>
+        <div class="ph-sub" id="gardenSub">收拾书桌、衣物、玩具，就能给小水草攒能量</div>
+      </div>
+
+      <div class="garden-top">
+        <div class="garden-sky">
+          <svg class="garden-plot" id="gardenPlot"><use href="#ic-seed"/></svg>
+          <div class="g-stage-name" id="gardenStage">一颗小种子</div>
+          <div class="g-stage-sub" id="gardenStageSub">再攒 5 点能量，它就会发芽啦</div>
+          <div class="garden-energy">
+            <span class="ge-tx">🌊 成长能量</span>
+            <span class="ge-bar"><i id="gardenEnergyBar"></i></span>
+            <span class="ge-tx" id="gardenEnergyTx">0/100</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">
+        <svg class="st-ic"><use href="#ic-toybox"/></svg>
+        <span>做家务打卡</span>
+        <span class="st-count" id="gardenHabitCnt">0/3</span>
+      </div>
+      <div class="habit-list" id="gardenHabits"></div>
+
+      <div class="sec-title">
+        <svg class="st-ic"><use href="#ic-fruit"/></svg>
+        <span>收获记录</span>
+      </div>
+      <div id="gardenHarvest"></div>
+    </section>
+
+    <!-- ==================== 语文 ==================== -->
+    <section class="page" id="page-chinese">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-schoolbook"/></svg>
+        <h2>语文</h2>
+        <div class="ph-sub">练字 · 作业 · 练习 · 阅读</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>语文进度</span><span><b id="cnProg">0/4</b></span></div>
+        <div class="pp-bar"><i id="cnBar"></i></div>
+      </div>
+      <div class="task-list" id="cnTasks"></div>
+    </section>
+
+    <!-- ==================== 数学 ==================== -->
+    <section class="page" id="page-math">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-math"/></svg>
+        <h2>数学</h2>
+        <div class="ph-sub">口算 · 课外练习</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>数学进度</span><span><b id="maProg">0/2</b></span></div>
+        <div class="pp-bar"><i id="maBar"></i></div>
+      </div>
+      <div class="task-list" id="maTasks"></div>
+    </section>
+
+    <!-- ==================== 英语 ==================== -->
+    <section class="page" id="page-english">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-abc"/></svg>
+        <h2>英语</h2>
+        <div class="ph-sub">听力 · ABC Reading</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>英语进度</span><span><b id="enProg">0/2</b></span></div>
+        <div class="pp-bar"><i id="enBar"></i></div>
+      </div>
+      <div class="task-list" id="enTasks"></div>
+    </section>
+
+    <!-- ==================== 运动 ==================== -->
+    <section class="page" id="page-sport">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-rope"/></svg>
+        <h2>运动</h2>
+        <div class="ph-sub">每天动一动，身体棒棒</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>运动进度</span><span><b id="spProg">0/1</b></span></div>
+        <div class="pp-bar"><i id="spBar"></i></div>
+      </div>
+      <div class="task-list" id="spTasks"></div>
+    </section>
+
+    <!-- ==================== 每日阅读 ==================== -->
+    <section class="page" id="page-reading">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-read"/></svg>
+        <h2>每日阅读</h2>
+        <div class="ph-sub">每天读一点，积少成多</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>阅读进度</span><span><b id="rdProg">0/2</b></span></div>
+        <div class="pp-bar"><i id="rdBar"></i></div>
+      </div>
+      <div class="task-list" id="rdTasks"></div>
+
+      <div class="sec-title" style="margin-top:24px">
+        <svg class="st-ic"><use href="#ic-book2"/></svg>
+        <span>最近在读</span>
+      </div>
+      <div id="rdBooks"></div>
+    </section>
+
+    <!-- ==================== 课表 ==================== -->
+    <section class="page" id="page-schedule">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-calendar"/></svg>
+        <h2>本周课表</h2>
+        <div class="ph-sub">放学后安排 · 今天已高亮</div>
+      </div>
+      <div class="week-wrap" id="weekWrap"></div>
+    </section>
+
+    <!-- ==================== 宠物 ==================== -->
+    <section class="page" id="page-pet">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-whale"/></svg>
+        <h2>我的宠物泡泡</h2>
+        <div class="ph-sub">完成任务赚星星，给泡泡买好东西</div>
+      </div>
+      <div class="pet-wrap">
+        <div class="pet-card">
+          <div class="pet-head">
+            <svg class="p-ic"><use href="#ic-whale"/></svg>
+            <h3>泡泡 · Eric的小鲸鱼</h3>
+            <span class="mood-tag" id="moodTag">状态很棒</span>
+          </div>
+          <div class="stage" id="stage">
+            <svg id="kekeSvg" viewBox="0 0 300 320">
+              <ellipse cx="150" cy="298" rx="96" ry="13" fill="#cde6f7" opacity=".75"/>
+                            <g id="kekeBody">
+                <g class="keke-tail">
+                  <path d="M240 186 q36 -28 52 -16 q-6 26 -28 36 q24 10 20 34 q-24 6 -44 -20 Z" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
+                </g>
+                <g class="keke-ears">
+                  <path d="M64 208 q-34 2 -44 32 q24 14 48 -8 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
+                  <path d="M236 208 q34 2 44 32 q-24 14 -48 -8 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
+                </g>
+                <ellipse cx="150" cy="226" rx="102" ry="72" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2.5"/>
+                <path d="M52 246 q98 78 196 0 q-14 46 -98 46 q-84 0 -98 -46 Z" fill="#fdfefe"/>
+                <path d="M136 158 q12 -24 28 -18 q2 18 -10 26 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.5" stroke-linejoin="round"/>
+                <g class="keke-spray">
+                  <path d="M150 128 V 94" stroke="#7fc9ef" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M132 122 q-7 -12 -4 -24" stroke="#7fc9ef" stroke-width="5" fill="none" stroke-linecap="round"/>
+                  <path d="M168 122 q7 -12 4 -24" stroke="#7fc9ef" stroke-width="5" fill="none" stroke-linecap="round"/>
+                  <circle cx="122" cy="90" r="7" fill="#a5dcf6"/>
+                  <circle cx="178" cy="90" r="7" fill="#a5dcf6"/>
+                  <circle cx="150" cy="76" r="8" fill="#a5dcf6"/>
+                  <circle cx="137" cy="66" r="5" fill="#c8ecfa"/>
+                  <circle cx="164" cy="64" r="5" fill="#c8ecfa"/>
+                </g>
+                <g class="keke-eyes-open">
+                  <circle cx="118" cy="196" r="9.5" fill="#27496d"/>
+                  <circle cx="182" cy="196" r="9.5" fill="#27496d"/>
+                  <circle cx="121" cy="192.5" r="3.4" fill="#fff"/>
+                  <circle cx="185" cy="192.5" r="3.4" fill="#fff"/>
+                </g>
+                <g class="keke-eyes-closed">
+                  <path d="M109 198 q9 -11 18 0" stroke="#27496d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                  <path d="M173 198 q9 -11 18 0" stroke="#27496d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                </g>
+                <ellipse cx="100" cy="218" rx="13" ry="8" fill="#ffcad6" opacity=".85"/>
+                <ellipse cx="200" cy="218" rx="13" ry="8" fill="#ffcad6" opacity=".85"/>
+                <path class="keke-mouth-smile" d="M139 216 q11 10 22 0" stroke="#4a86b8" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+                <path class="keke-mouth-chew" d="M143 218 q7 7 14 0 q-7 5 -14 0" fill="#3b7fc0"/>
+                <path class="keke-mouth-open" d="M141 215 q9 13 18 0 q-9 6 -18 0" fill="#3b7fc0"/>
+                <path class="keke-mouth-sad" d="M142 220 q8 -6 16 0" stroke="#4a86b8" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+                <g class="keke-fx-carrot">
+                  <g transform="translate(100,232) rotate(-18)">
+                    <ellipse cx="13" cy="18" rx="15" ry="9" fill="#7fd0a8" stroke="#4fae7e" stroke-width="2.5"/>
+                    <path d="M26 18 l14 -9 v18 Z" fill="#7fd0a8" stroke="#4fae7e" stroke-width="2.5" stroke-linejoin="round"/>
+                    <circle cx="6" cy="16" r="2.6" fill="#27496d"/>
+                    <path d="M6 26 q7 5 14 0" stroke="#4fae7e" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <circle cx="36" cy="6" r="3" fill="#c8ecfa"/>
+                  </g>
+                </g>
+                <g class="keke-fx-ball">
+                  <circle cx="104" cy="252" r="21" fill="#ffd94d" stroke="#e8a10c" stroke-width="2.5"/>
+                  <path d="M88 242 q16 10 32 0 M88 262 q16 -10 32 0" stroke="#e8a10c" stroke-width="2.5" fill="none"/>
+                </g>
+                <g class="keke-fx-bubble"><circle cx="112" cy="176" r="12" fill="#fff" opacity=".72"/>
+                  <circle cx="94" cy="156" r="8" fill="#fff" opacity=".6"/>
+                  <circle cx="126" cy="150" r="6" fill="#fff" opacity=".55"/>
+                </g>
+                <g class="keke-fx-shower">
+                  <path d="M212 96 q0 -30 0 -46" stroke="#c9d6e0" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M194 50 h36 q6 0 6 6 l-4 14 h-40 l-4 -14 q0 -6 6 -6 Z" fill="#dfe8ef" stroke="#b8c6d1" stroke-width="2.5"/>
+                  <g class="water">
+                    <path d="M200 74 v16" stroke="#8fd8f2" stroke-width="3.5" stroke-linecap="round"/>
+                    <path d="M212 74 v22" stroke="#8fd8f2" stroke-width="3.5" stroke-linecap="round"/>
+                    <path d="M224 74 v16" stroke="#8fd8f2" stroke-width="3.5" stroke-linecap="round"/>
+                    <path d="M206 96 v14" stroke="#a5e2f5" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M218 98 v14" stroke="#a5e2f5" stroke-width="3" stroke-linecap="round"/>
+                  </g>
+                </g>
+                <g class="keke-fx-fever">
+                  <rect x="112" y="162" width="76" height="19" rx="9.5" fill="#bfe3ff" opacity=".94"/>
+                  <text x="150" y="176" text-anchor="middle" font-size="11" fill="#4a90c8" font-weight="bold">退热贴</text>
+                </g>
+                <g class="keke-fx-pill">
+                  <ellipse cx="196" cy="234" rx="15" ry="9" fill="#f26d6d" transform="rotate(-24 196 234)"/>
+                  <ellipse cx="204" cy="228" rx="15" ry="9" fill="#fff" stroke="#e8c4c4" stroke-width="1.6" transform="rotate(-24 204 228)"/>
+                </g>
+                <g class="keke-fx-heart">
+                  <path class="h1" d="M86 128 c-7-10-21-7-21 4 c0 9 11 15 21 23 c10-8 21-14 21-23 c0-11-14-14-21-4Z" fill="#ff8fb0" opacity="0"/>
+                  <path class="h2" d="M218 120 c-7-10-21-7-21 4 c0 9 11 15 21 23 c10-8 21-14 21-23 c0-11-14-14-21-4Z" fill="#ff8fb0" opacity="0"/>
+                  <path class="h3" d="M152 96 c-7-10-21-7-21 4 c0 9 11 15 21 23 c10-8 21-14 21-23 c0-11-14-14-21-4Z" fill="#ff8fb0" opacity="0"/>
+                </g>
+              </g>
+            </svg>
+          </div>
+          <div class="bubble-say" id="petSay">你好呀Eric！我是泡泡🐳</div>
+          <div class="status-grid">
+            <div class="st"><svg class="si"><use href="#ic-hunger"/></svg><span class="sl">饥饿</span><div class="sb"><div class="sf" id="sfHunger"></div></div></div>
+            <div class="st"><svg class="si"><use href="#ic-mood2"/></svg><span class="sl">心情</span><div class="sb"><div class="sf" id="sfMood"></div></div></div>
+            <div class="st"><svg class="si"><use href="#ic-clean"/></svg><span class="sl">清洁</span><div class="sb"><div class="sf" id="sfClean"></div></div></div>
+            <div class="st"><svg class="si"><use href="#ic-health"/></svg><span class="sl">健康</span><div class="sb"><div class="sf" id="sfHealth"></div></div></div>
+          </div>
+          <div class="pet-btns">
+            <button class="pbtn" id="btnFeed" onclick="openFeed()"><span class="pi">🐟</span><span class="pl">喂食</span></button>
+            <button class="pbtn" id="btnPlay" onclick="doPlay()"><span class="pi">🎾</span><span class="pl">玩耍</span></button>
+            <button class="pbtn" id="btnBath" onclick="doBath()"><span class="pi">🛁</span><span class="pl">洗澡</span></button>
+            <button class="pbtn" id="btnHeal" onclick="doHeal()"><span class="pi">💊</span><span class="pl">治疗</span></button>
+          </div>
+          <button class="pet-shop-btn" onclick="openShop()">🛒 泡泡商店 &nbsp;用⭐给宠物买东西</button>
+        </div>
+        <div class="pet-card">
+          <div class="sec-title" style="margin-top:0">
+            <svg class="st-ic"><use href="#ic-star"/></svg>
+            <span>我的星星</span>
+          </div>
+          <div class="reward-head" style="border-color:#d6eaf9;background:#f4fafe">
+            <div class="rh-tx">完成任务就能攒星星，给泡泡买东西～</div>
+            <div class="rh-star">⭐<span id="petStars">0</span></div>
+          </div>
+          <div class="sec-title" style="margin-top:20px">
+            <svg class="st-ic"><use href="#ic-cookie"/></svg>
+            <span>互动小提示</span>
+          </div>
+          <div style="font-size:14px;line-height:2;color:var(--brown-light);font-weight:700;padding:0 4px">
+            🐟 泡泡最爱吃<span style="color:var(--pink-deep);font-weight:900">小鱼干</span>，喂饱它心情会变好<br>
+            🎾 陪它<span style="color:var(--pink-deep);font-weight:900">玩小皮球</span>，心情值唰唰涨<br>
+            🛁 用<span style="color:var(--pink-deep);font-weight:900">沐浴露</span>给它洗香香，会有花洒喷水哦<br>
+            💊 生病了要用<span style="color:var(--pink-deep);font-weight:900">医药箱</span>，它会打喷嚏然后乖乖吃药<br>
+            👆 直接点它一下，它会开心地回应你（每天 3 次）
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 错题本 ==================== -->
+    <section class="page" id="page-wrong">
+      <div class="page-head">
+        <svg class="ph-ic"><use href="#ic-wrong"/></svg>
+        <h2>我的错题本</h2>
+        <div class="ph-sub">记下来 · 弄懂它 · 打败它</div>
+      </div>
+
+      <div class="wrong-form">
+        <div class="wf-row">
+          <div style="flex:0 0 auto;min-width:120px">
+            <label class="wf-label">科目</label>
+            <select class="inp" id="wSubject">
+              <option value="语文">语文</option>
+              <option value="数学">数学</option>
+              <option value="英语">英语</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div>
+            <label class="wf-label">题目 / 知识点</label>
+            <input class="inp" id="wQuestion" placeholder="例如：36 + 47 算错了">
+          </div>
+        </div>
+        <div class="wf-row">
+          <div>
+            <label class="wf-label">为什么错（可留空）</label>
+            <input class="inp" id="wWhy" placeholder="例如：忘记进位了">
+          </div>
+          <div style="flex:0 0 auto">
+            <label class="wf-label">&nbsp;</label>
+            <button class="wf-add" onclick="addWrong()">＋ 记一笔</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="wrong-stats" id="wrongStats"></div>
+      <div class="wrong-list" id="wrongList"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="celebrate" id="celebrate"></div>
+<div id="toast"></div>
+<!-- ==================== 弹层：喂食 ==================== -->
 <div class="overlay" id="ovFeed">
   <div class="dialog">
     <h3 id="feedTitle">🐟 给泡泡喂点什么？</h3>
     <p class="d-sub" id="feedSub">泡泡的肚子在咕咕叫啦</p>
     <div class="shop-grid" id="feedGrid"></div>
-    <button class="dlg-close" onclick="closeOv('ovFeed')">不喂了</button>
+    <button class="btn-full ghost dlg-close" onclick="closeOv('ovFeed')">不喂了</button>
   </div>
 </div>
 
-<!-- 弹层：商店 -->
+<!-- ==================== 弹层：商店 ==================== -->
 <div class="overlay" id="ovShop">
   <div class="dialog">
-    <h3>🛒 泡泡商店</h3>
+    <h3 id="shopTitle">🛒 泡泡商店</h3>
     <p class="d-sub">用星星给泡泡买好东西 · 当前 <b id="shopStars" style="color:#e8a10c">0</b> ⭐</p>
     <div class="shop-grid" id="shopGrid"></div>
-    <button class="dlg-close" onclick="closeOv('ovShop')">关闭</button>
+    <button class="btn-full ghost dlg-close" onclick="closeOv('ovShop')">关闭</button>
   </div>
 </div>
 
-<!-- 弹层：算术锁 -->
+<!-- ==================== 弹层：算术锁 ==================== -->
 <div class="overlay" id="ovMath">
   <div class="dialog">
     <h3>🔒 家长验证</h3>
@@ -670,25 +1222,23 @@ body::before {
       <button onclick="padNum('1')">1</button><button onclick="padNum('2')">2</button><button onclick="padNum('3')">3</button>
       <button onclick="padNum('4')">4</button><button onclick="padNum('5')">5</button><button onclick="padNum('6')">6</button>
       <button onclick="padNum('7')">7</button><button onclick="padNum('8')">8</button><button onclick="padNum('9')">9</button>
-      <button class="del" onclick="padNum('C')">清除</button><button onclick="padNum('0')">0</button><button class="okk" onclick="padNum('OK')">✓</button>
+      <button class="del" onclick="padNum('C')">清除</button><button onclick="padNum('0')">0</button><button onclick="padNum('OK')">✓</button>
     </div>
-    <button class="dlg-close" onclick="closeOv('ovMath')">取消</button>
+    <button class="btn-full ghost dlg-close" onclick="closeOv('ovMath')">取消</button>
   </div>
 </div>
 
-<!-- 弹层：家长面板 -->
+<!-- ==================== 弹层：家长面板 ==================== -->
 <div class="overlay" id="ovParent">
   <div class="dialog">
-    <h3>👨‍👩‍👦 家长设置</h3>
-    <p class="d-sub" id="parentSub">Eric 学习工作台（纯净版）· 管理面板</p>
-
+    <h3>👨‍👩‍👧 家长设置</h3>
+    <p class="d-sub" id="parentSub">Eric 学习工作台 · 管理面板</p>
     <div class="ad-sep">🧩 分类与任务管理</div>
     <div class="admin-box" id="adminBox"></div>
-    <div class="ad-add">
+    <div class="ad-add" style="margin-bottom:4px">
       <input id="newCat" placeholder="新分类名，如：绘画 / 科学">
       <button onclick="addCat()">＋添加分类</button>
     </div>
-
     <div class="ad-sep">⚙️ 日常管理</div>
     <div class="p-row">
       <div class="pl2"><div class="t">积分调整</div><div class="s" id="pPointsDesc">当前 0 分</div></div>
@@ -716,41 +1266,40 @@ body::before {
       <button class="p-btn-sm" onclick="restoreData()">恢复</button>
     </div>
     <div class="p-row">
-      <div class="pl2"><div class="t" style="color:#d84a4a">清空全部数据</div><div class="s">积分、星星、宠物、分类全部重置</div></div>
-      <button class="p-btn-sm danger" onclick="clearAll()">清空</button>
+      <div class="pl2"><div class="t" style="color:#d84a4a">清空全部数据</div><div class="s">积分、星星、宠物、错题、做家务全部重置</div></div>
+      <button class="p-btn-sm" style="border-color:#f5c4c4;color:#d84a4a" onclick="clearAll()">清空</button>
     </div>
-    <button class="dlg-close" onclick="closeOv('ovParent')">关闭</button>
+    <button class="btn-full ghost dlg-close" onclick="closeOv('ovParent')">关闭</button>
   </div>
 </div>
 
-<div class="celebrate" id="celebrate"></div>
-<div id="toast"></div>
 
-<!-- SVG 图标库（全鲸鱼元素） -->
+<!-- ===== SVG 图标库 ===== -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-<symbol id="ic-whale" viewBox="0 0 100 100">
-      <g stroke="#7fc9ef" stroke-width="3" stroke-linecap="round" fill="none">
-        <path d="M44 22 V 10"/>
-        <path d="M33 20 q-5 -7 -3 -12"/>
-        <path d="M55 20 q5 -7 3 -12"/>
+    <!-- ===== 鲸鱼组件（Eric） ===== -->
+    <symbol id="ic-whale" viewBox="0 0 100 100">
+      <g stroke="#7fc9ef" stroke-width="3.6" stroke-linecap="round" fill="none">
+        <path d="M46 22 V 8"/>
+        <path d="M33 20 q-6 -8 -4 -14"/>
+        <path d="M59 20 q6 -8 4 -14"/>
       </g>
-      <circle cx="29" cy="6" r="2.6" fill="#7fc9ef"/>
-      <circle cx="59" cy="6" r="2.6" fill="#7fc9ef"/>
-      <circle cx="44" cy="4" r="2.2" fill="#a5dcf6"/>
-      <path d="M76 74 q11 -9 17 -2 q-2 9 -11 13 q8 2 8 11 q-8 4 -14 -5 Z" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2"/>
-      <ellipse cx="48" cy="60" rx="31" ry="26" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2"/>
-      <path d="M20 66 q28 26 56 0 q-11 18 -28 18 q-17 0 -28 -18 Z" fill="#fdfefe"/>
-      <path d="M44 36 q4 -10 12 -8 q1 8 -4 12 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2"/>
-      <circle cx="39" cy="56" r="3.6" fill="#27496d"/>
-      <circle cx="59" cy="56" r="3.6" fill="#27496d"/>
-      <circle cx="40.2" cy="54.6" r="1.2" fill="#fff"/>
-      <circle cx="60.2" cy="54.6" r="1.2" fill="#fff"/>
-      <ellipse cx="31" cy="64" rx="5" ry="3.2" fill="#ffcad6"/>
-      <ellipse cx="65" cy="64" rx="5" ry="3.2" fill="#ffcad6"/>
-      <path d="M44 65 q5 4 10 0" stroke="#4a86b8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="27" cy="3" r="3.2" fill="#7fc9ef"/>
+      <circle cx="65" cy="3" r="3.2" fill="#7fc9ef"/>
+      <circle cx="46" cy="1" r="2.6" fill="#a5dcf6"/>
+      <path d="M79 78 q13 -11 20 -3 q-3 11 -13 15 q10 3 10 13 q-11 5 -18 -6 Z" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2.4"/>
+      <ellipse cx="47" cy="60" rx="38" ry="32" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="2.4"/>
+      <path d="M11 66 q36 30 72 0 q-14 22 -36 22 q-22 0 -36 -22 Z" fill="#fdfefe"/>
+      <path d="M42 32 q5 -13 15 -10 q2 11 -4 15 Z" fill="#7fc0ea" stroke="#5b9fd4" stroke-width="2.4"/>
+      <circle cx="36" cy="55" r="4.6" fill="#27496d"/>
+      <circle cx="60" cy="55" r="4.6" fill="#27496d"/>
+      <circle cx="37.7" cy="53.2" r="1.6" fill="#fff"/>
+      <circle cx="61.7" cy="53.2" r="1.6" fill="#fff"/>
+      <ellipse cx="26" cy="65" rx="6.5" ry="4.2" fill="#ffcad6"/>
+      <ellipse cx="68" cy="65" rx="6.5" ry="4.2" fill="#ffcad6"/>
+      <path d="M41 65 q6 5 12 0" stroke="#4a86b8" stroke-width="2.4" fill="none" stroke-linecap="round"/>
     </symbol>
-<symbol id="ic-pen" viewBox="0 0 100 100">
+    <symbol id="ic-pen" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(58,62) rotate(38)">
         <rect x="0" y="0" width="11" height="34" rx="3" fill="#ffb13d"/>
@@ -759,7 +1308,7 @@ body::before {
         <path d="M3.2 40 L5.5 44 L7.8 40 Z" fill="#27496d"/>
       </g>
     </symbol>
-<symbol id="ic-schoolbook" viewBox="0 0 100 100">
+    <symbol id="ic-schoolbook" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(55,58)">
         <rect x="0" y="0" width="38" height="30" rx="5" fill="#7cb8f0" stroke="#5a9bd6" stroke-width="2"/>
@@ -767,7 +1316,7 @@ body::before {
         <path d="M9 11 h20 M9 17 h20 M9 23 h12" stroke="#bcd6f2" stroke-width="2.5" stroke-linecap="round"/>
       </g>
     </symbol>
-<symbol id="ic-workbook" viewBox="0 0 100 100">
+    <symbol id="ic-workbook" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(56,58)">
         <rect x="0" y="0" width="34" height="30" rx="5" fill="#4da3dd" stroke="#3a86c4" stroke-width="2"/>
@@ -775,7 +1324,7 @@ body::before {
         <path d="M9 11 h16 M9 17 h16 M9 23 h9" stroke="#f4c6d8" stroke-width="2.5" stroke-linecap="round"/>
       </g>
     </symbol>
-<symbol id="ic-read" viewBox="0 0 100 100">
+    <symbol id="ic-read" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(52,60)">
         <path d="M0 6 Q10 0 20 6 L20 30 Q10 24 0 30 Z" fill="#ffd98e" stroke="#e8b355" stroke-width="2"/>
@@ -783,14 +1332,14 @@ body::before {
         <path d="M6 12 Q11 9 16 12 M6 18 Q11 15 16 18 M24 12 Q29 9 34 12 M24 18 Q29 15 34 18" stroke="#d6a24f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
       </g>
     </symbol>
-<symbol id="ic-math" viewBox="0 0 100 100">
+    <symbol id="ic-math" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(56,60)">
         <rect x="0" y="0" width="36" height="30" rx="6" fill="#7ecf9a" stroke="#5cb87c" stroke-width="2"/>
         <text x="18" y="21" text-anchor="middle" font-size="15" font-weight="bold" fill="#fff" font-family="Arial">＋－</text>
       </g>
     </symbol>
-<symbol id="ic-headphone" viewBox="0 0 100 100">
+    <symbol id="ic-headphone" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(18,44)">
         <path d="M6 26 Q6 -4 44 -4 Q82 -4 82 26" fill="none" stroke="#4da3dd" stroke-width="6" stroke-linecap="round"/>
@@ -799,20 +1348,20 @@ body::before {
         <path d="M20 36 q8 5 16 0" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".8"/>
       </g>
     </symbol>
-<symbol id="ic-abc" viewBox="0 0 100 100">
+    <symbol id="ic-abc" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(55,58)">
         <rect x="0" y="0" width="38" height="30" rx="5" fill="#b59bf0" stroke="#9a7fe0" stroke-width="2"/>
         <text x="19" y="21" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" font-family="Arial">ABC</text>
       </g>
     </symbol>
-<symbol id="ic-rope" viewBox="0 0 100 100">
+    <symbol id="ic-rope" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.82) translate(11,6)"/>
       <path d="M12 78 Q50 8 88 78" fill="none" stroke="#ff9d5c" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 7"/>
       <rect x="6" y="72" width="9" height="16" rx="4" fill="#2f86c9"/>
       <rect x="85" y="72" width="9" height="16" rx="4" fill="#2f86c9"/>
     </symbol>
-<symbol id="ic-desk" viewBox="0 0 100 100">
+    <symbol id="ic-desk" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(54,62)">
         <rect x="0" y="0" width="36" height="8" rx="3" fill="#d9a06b"/>
@@ -821,7 +1370,7 @@ body::before {
         <rect x="8" y="-7" width="12" height="7" rx="1.5" fill="#7cb8f0"/>
       </g>
     </symbol>
-<symbol id="ic-cloth" viewBox="0 0 100 100">
+    <symbol id="ic-cloth" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(54,60)">
         <rect x="0" y="0" width="36" height="26" rx="5" fill="#8fd8f2" stroke="#69b9dc" stroke-width="2"/>
@@ -829,7 +1378,7 @@ body::before {
         <rect x="14" y="-5" width="8" height="8" rx="2" fill="#fff" stroke="#69b9dc" stroke-width="1.5"/>
       </g>
     </symbol>
-<symbol id="ic-toybox" viewBox="0 0 100 100">
+    <symbol id="ic-toybox" viewBox="0 0 100 100">
       <use href="#ic-whale" transform="scale(.88) translate(7,2)"/>
       <g transform="translate(54,60)">
         <rect x="0" y="4" width="36" height="24" rx="4" fill="#ffb13d" stroke="#e0902a" stroke-width="2"/>
@@ -838,7 +1387,7 @@ body::before {
         <circle cx="26" cy="0" r="4.5" fill="#7cb8f0"/>
       </g>
     </symbol>
-<symbol id="ic-logo" viewBox="0 0 100 100">
+    <symbol id="ic-logo" viewBox="0 0 100 100">
       <g stroke="#7fc9ef" stroke-width="3.5" stroke-linecap="round" fill="none">
         <path d="M40 20 V 8"/>
         <path d="M28 18 q-5 -7 -3 -12"/>
@@ -861,21 +1410,23 @@ body::before {
       <circle cx="84" cy="26" r="7" fill="#ffc94d" stroke="#e8a10c" stroke-width="2"/>
       <path d="M84 22.5 l1.4 3 3.2 .4 -2.3 2.1 .7 3.2 -3 -1.6 -3 1.6 .7 -3.2 -2.3 -2.1 3.2 -.4 Z" fill="#fff"/>
     </symbol>
-<symbol id="ic-tv" viewBox="0 0 100 100">
+
+    <!-- ===== 奖励图标（共用） ===== -->
+    <symbol id="ic-tv" viewBox="0 0 100 100">
       <rect x="12" y="26" width="76" height="52" rx="9" fill="#7cb8f0" stroke="#5a9bd6" stroke-width="3"/>
       <rect x="21" y="35" width="58" height="34" rx="5" fill="#dff0ff"/>
       <path d="M38 82 h24 M50 78 v6" stroke="#5a9bd6" stroke-width="4" stroke-linecap="round"/>
       <path d="M36 48 l16 -8 v18 Z" fill="#4da3dd"/>
       <circle cx="62" cy="52" r="4" fill="#ffd98e"/>
     </symbol>
-<symbol id="ic-snack" viewBox="0 0 100 100">
+    <symbol id="ic-snack" viewBox="0 0 100 100">
       <path d="M50 88 L18 42 Q34 22 50 22 Q66 22 82 42 Z" fill="#ffb972" stroke="#e08a4a" stroke-width="3"/>
       <circle cx="38" cy="52" r="5" fill="#8a5a3e"/>
       <circle cx="55" cy="58" r="5" fill="#8a5a3e"/>
       <circle cx="47" cy="70" r="4.5" fill="#8a5a3e"/>
       <path d="M42 26 Q50 8 58 26" fill="none" stroke="#2f86c9" stroke-width="3" stroke-linecap="round"/>
     </symbol>
-<symbol id="ic-game" viewBox="0 0 100 100">
+    <symbol id="ic-game" viewBox="0 0 100 100">
       <rect x="16" y="30" width="68" height="44" rx="10" fill="#4da3dd" stroke="#3a86c4" stroke-width="3"/>
       <rect x="24" y="38" width="20" height="20" rx="4" fill="#fff" opacity=".9"/>
       <circle cx="66" cy="46" r="5" fill="#fff"/>
@@ -884,23 +1435,27 @@ body::before {
       <rect x="26" y="46" width="10" height="4" fill="#3a86c4"/>
       <path d="M40 74 h20" stroke="#3a86c4" stroke-width="3" stroke-linecap="round"/>
     </symbol>
-<symbol id="ic-toy2" viewBox="0 0 100 100">
+    <symbol id="ic-toy2" viewBox="0 0 100 100">
       <rect x="22" y="34" width="56" height="42" rx="8" fill="#8fd8f2" stroke="#69b9dc" stroke-width="3"/>
       <path d="M22 50 h56" stroke="#69b9dc" stroke-width="3"/>
       <circle cx="50" cy="30" r="7" fill="#fff" stroke="#69b9dc" stroke-width="2.5"/>
       <path d="M30 60 l8 -8 l8 8 M54 60 l8 -8 l8 8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
-<symbol id="ic-park" viewBox="0 0 100 100">
+    <symbol id="ic-park" viewBox="0 0 100 100">
       <path d="M10 76 Q50 40 90 76" fill="none" stroke="#ff9d5c" stroke-width="4" stroke-linecap="round"/>
       <rect x="46" y="68" width="8" height="14" rx="3" fill="#c08a55"/>
       <circle cx="50" cy="34" r="14" fill="#ffd98e" stroke="#e8b355" stroke-width="3"/>
       <path d="M50 20 l3 7 h7 l-5.5 4.5 L56 39 l-6 -4 -6 4 1.5 -7.5 L39 27 h7 Z" fill="#4da3dd"/>
       <path d="M18 84 h64" stroke="#7ecf9a" stroke-width="4" stroke-linecap="round"/>
     </symbol>
-<symbol id="ic-star" viewBox="0 0 100 100">
+
+    <!-- ===== 星星 ===== -->
+    <symbol id="ic-star" viewBox="0 0 100 100">
       <path d="M50 12 l10.8 22.4 24.7 3.4 -18 17.2 4.4 24.4 L50 67.6 28.1 79.4 l4.4 -24.4 -18 -17.2 24.7 -3.4 Z" fill="#ffc94d" stroke="#e8a10c" stroke-width="4" stroke-linejoin="round"/>
     </symbol>
-<symbol id="ic-carrot" viewBox="0 0 100 100">
+
+    <!-- ===== Eric 商店物品 ===== -->
+    <symbol id="ic-carrot" viewBox="0 0 100 100">
       <ellipse cx="40" cy="52" rx="25" ry="14" fill="#7fd0a8" stroke="#4fae7e" stroke-width="3"/>
       <path d="M62 52 l24 -14 v28 Z" fill="#7fd0a8" stroke="#4fae7e" stroke-width="3" stroke-linejoin="round"/>
       <circle cx="28" cy="49" r="4.5" fill="#27496d"/>
@@ -910,13 +1465,13 @@ body::before {
       <circle cx="80" cy="30" r="3" fill="#c8ecfa"/>
       <circle cx="72" cy="70" r="3.5" fill="#c8ecfa"/>
     </symbol>
-<symbol id="ic-apple" viewBox="0 0 100 100">
+    <symbol id="ic-apple" viewBox="0 0 100 100">
       <path d="M50 30 Q26 26 22 52 Q18 80 44 86 Q50 88 56 86 Q82 80 78 52 Q74 26 50 30" fill="#f26d6d" stroke="#d84a4a" stroke-width="3"/>
       <path d="M50 30 q-2 -14 8 -20" fill="none" stroke="#8a5a3e" stroke-width="4" stroke-linecap="round"/>
       <path d="M58 14 q16 -2 16 12 q-14 4 -16 -12" fill="#7ecf9a" stroke="#5cb87c" stroke-width="2"/>
       <ellipse cx="38" cy="52" rx="6" ry="9" fill="#ffb0b0" opacity=".7"/>
     </symbol>
-<symbol id="ic-cookie" viewBox="0 0 100 100">
+    <symbol id="ic-cookie" viewBox="0 0 100 100">
       <circle cx="50" cy="52" r="34" fill="#e8b04b" stroke="#c98f2e" stroke-width="3"/>
       <circle cx="38" cy="42" r="5.5" fill="#8a5a3e"/>
       <circle cx="58" cy="38" r="4.5" fill="#8a5a3e"/>
@@ -925,24 +1480,25 @@ body::before {
       <circle cx="36" cy="64" r="4" fill="#8a5a3e"/>
       <path d="M30 78 q20 12 40 0" stroke="#c98f2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
     </symbol>
-<symbol id="ic-ball" viewBox="0 0 100 100">
+    <symbol id="ic-ball" viewBox="0 0 100 100">
       <circle cx="50" cy="52" r="32" fill="#f26d6d" stroke="#d84a4a" stroke-width="3"/>
       <path d="M18 52 h64 M50 20 v64" stroke="#fff" stroke-width="4" opacity=".85"/>
       <path d="M27 29 Q50 44 73 29 M27 75 Q50 60 73 75" stroke="#fff" stroke-width="4" fill="none" opacity=".85"/>
       <ellipse cx="40" cy="40" rx="7" ry="4.5" fill="#fff" opacity=".5"/>
     </symbol>
-<symbol id="ic-medkit" viewBox="0 0 100 100">
+
+    <symbol id="ic-medkit" viewBox="0 0 100 100">
       <rect x="16" y="36" width="68" height="44" rx="9" fill="#f26d6d" stroke="#d84a4a" stroke-width="3"/>
       <rect x="38" y="26" width="24" height="12" rx="4" fill="#d84a4a"/>
       <rect x="46" y="46" width="8" height="24" rx="2" fill="#fff"/>
       <rect x="38" y="54" width="24" height="8" rx="2" fill="#fff"/>
       <circle cx="26" cy="46" r="3" fill="#ffb0b0"/>
     </symbol>
-<symbol id="ic-hunger" viewBox="0 0 100 100"><use href="#ic-carrot" transform="scale(.9) translate(5,5)"/></symbol>
-<symbol id="ic-mood2" viewBox="0 0 100 100">
+    <symbol id="ic-hunger" viewBox="0 0 100 100"><use href="#ic-carrot" transform="scale(.9) translate(5,5)"/></symbol>
+    <symbol id="ic-mood2" viewBox="0 0 100 100">
       <path d="M50 84 C22 64 12 46 24 32 C34 20 46 26 50 36 C54 26 66 20 76 32 C88 46 78 64 50 84 Z" fill="#4da3dd" stroke="#3a86c4" stroke-width="3"/>
     </symbol>
-<symbol id="ic-clean" viewBox="0 0 100 100">
+    <symbol id="ic-clean" viewBox="0 0 100 100">
       <circle cx="34" cy="42" r="14" fill="none" stroke="#8fd8f2" stroke-width="4"/>
       <circle cx="58" cy="30" r="9" fill="none" stroke="#8fd8f2" stroke-width="4"/>
       <circle cx="64" cy="56" r="12" fill="none" stroke="#8fd8f2" stroke-width="4"/>
@@ -950,89 +1506,264 @@ body::before {
       <circle cx="30" cy="38" r="3" fill="#fff" opacity=".9"/>
       <circle cx="56" cy="27" r="2.4" fill="#fff" opacity=".9"/>
     </symbol>
-<symbol id="ic-health" viewBox="0 0 100 100">
+    <symbol id="ic-health" viewBox="0 0 100 100">
       <path d="M50 84 C22 64 12 46 24 32 C34 20 46 26 50 36 C54 26 66 20 76 32 C88 46 78 64 50 84 Z" fill="#f26d6d" stroke="#d84a4a" stroke-width="3"/>
       <rect x="45" y="36" width="10" height="28" rx="3" fill="#fff"/>
       <rect x="36" y="45" width="28" height="10" rx="3" fill="#fff"/>
     </symbol>
-<symbol id="ic-music" viewBox="0 0 100 100">
+      <!-- ===== 导航图标（纯图形，简洁） ===== -->
+    <symbol id="ic-home" viewBox="0 0 100 100">
+      <path d="M50 16 L86 44 L78 44 L78 82 Q78 86 74 86 L60 86 L60 62 Q60 56 50 56 Q40 56 40 62 L40 86 L26 86 Q22 86 22 82 L22 44 L14 44 Z" fill="#8ecdf0" stroke="#3a86c4" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="50" cy="40" r="5" fill="#fff"/>
+    </symbol>
+    <symbol id="ic-flower" viewBox="0 0 100 100">
+      <g fill="#ff9d6f" stroke="#e87a4a" stroke-width="3">
+        <circle cx="50" cy="18" r="12"/>
+        <circle cx="81" cy="40" r="12"/>
+        <circle cx="69" cy="77" r="12"/>
+        <circle cx="31" cy="77" r="12"/>
+        <circle cx="19" cy="40" r="12"/>
+      </g>
+      <circle cx="50" cy="50" r="20" fill="#ff9d6f" stroke="#e87a4a" stroke-width="3"/>
+      <circle cx="43" cy="46" r="2.8" fill="#e87a4a"/>
+      <circle cx="57" cy="46" r="2.8" fill="#e87a4a"/>
+      <path d="M44 56 q6 5 12 0" stroke="#e87a4a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <circle cx="33" cy="53" r="3" fill="#ffc7a3" opacity=".9"/>
+      <circle cx="67" cy="53" r="3" fill="#ffc7a3" opacity=".9"/>
+    </symbol>
+    <symbol id="ic-calendar" viewBox="0 0 100 100">
+      <rect x="14" y="22" width="72" height="64" rx="10" fill="#7cb8f0" stroke="#5a9bd6" stroke-width="3"/>
+      <rect x="14" y="22" width="72" height="18" rx="10" fill="#5a9bd6"/>
+      <rect x="26" y="12" width="8" height="18" rx="4" fill="#4a8ec4"/>
+      <rect x="66" y="12" width="8" height="18" rx="4" fill="#4a8ec4"/>
+      <rect x="24" y="48" width="14" height="12" rx="3" fill="#fff"/>
+      <rect x="43" y="48" width="14" height="12" rx="3" fill="#fff"/>
+      <rect x="62" y="48" width="14" height="12" rx="3" fill="#dff0ff"/>
+      <rect x="24" y="66" width="14" height="12" rx="3" fill="#dff0ff"/>
+      <rect x="43" y="66" width="14" height="12" rx="3" fill="#fff"/>
+      <rect x="62" y="66" width="14" height="12" rx="3" fill="#fff"/>
+    </symbol>
+    <symbol id="ic-wrong" viewBox="0 0 100 100">
+      <rect x="18" y="16" width="64" height="72" rx="9" fill="#a6d3f0" stroke="#5b9fd4" stroke-width="3"/>
+      <path d="M32 34 h36 M32 46 h36 M32 58 h20" stroke="#e5d3c6" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="70" cy="70" r="19" fill="#f26d6d" stroke="#d84a4a" stroke-width="3"/>
+      <path d="M63 63 L77 77 M77 63 L63 77" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- ===== 做家务植物成长阶段 ===== -->
+    <symbol id="ic-seed" viewBox="0 0 200 200">
+      <ellipse cx="100" cy="168" rx="62" ry="15" fill="#d8bfa8" opacity=".55"/>
+      <path d="M62 156 q38 -14 76 0 q-38 12 -76 0" fill="#9c7a60"/>
+      <ellipse cx="100" cy="140" rx="15" ry="18" fill="#c99a6b" stroke="#a87a4e" stroke-width="3"/>
+      <path d="M100 126 q-5 14 0 27" stroke="#a87a4e" stroke-width="2.5" fill="none"/>
+      <circle cx="84" cy="152" r="4" fill="#b98f63"/>
+      <circle cx="118" cy="155" r="3.5" fill="#b98f63"/>
+    </symbol>
+    <symbol id="ic-sprout" viewBox="0 0 200 200">
+      <ellipse cx="100" cy="168" rx="62" ry="15" fill="#d8bfa8" opacity=".55"/>
+      <path d="M62 156 q38 -14 76 0 q-38 12 -76 0" fill="#9c7a60"/>
+      <path d="M100 156 L100 96" stroke="#6cba86" stroke-width="7" stroke-linecap="round"/>
+      <path d="M100 124 q-22 -4 -28 -20 q20 -4 28 12 Z" fill="#8ed7a3" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M100 112 q22 -4 28 -20 q-20 -4 -28 12 Z" fill="#a5e2b8" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="ic-plant" viewBox="0 0 200 200">
+      <ellipse cx="100" cy="168" rx="62" ry="15" fill="#d8bfa8" opacity=".55"/>
+      <path d="M62 156 q38 -14 76 0 q-38 12 -76 0" fill="#9c7a60"/>
+      <path d="M100 156 L100 74" stroke="#5cb87c" stroke-width="8" stroke-linecap="round"/>
+      <path d="M100 132 q-30 -6 -38 -26 q28 -5 38 16 Z" fill="#8ed7a3" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M100 116 q30 -6 38 -26 q-28 -5 -38 16 Z" fill="#a5e2b8" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M100 96 q-26 -6 -32 -22 q24 -4 32 12 Z" fill="#9be0b2" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="100" cy="58" r="15" fill="#9bd4f2" stroke="#3a86c4" stroke-width="2.5"/>
+      <circle cx="78" cy="70" r="12" fill="#ffb3d1" stroke="#3a86c4" stroke-width="2.5"/>
+      <circle cx="122" cy="70" r="12" fill="#ffb3d1" stroke="#3a86c4" stroke-width="2.5"/>
+      <circle cx="100" cy="58" r="7" fill="#ffd94d"/>
+    </symbol>
+    <symbol id="ic-fruit" viewBox="0 0 200 200">
+      <ellipse cx="100" cy="170" rx="64" ry="14" fill="#d8bfa8" opacity=".55"/>
+      <path d="M64 158 q36 -13 72 0 q-36 11 -72 0" fill="#9c7a60"/>
+      <path d="M100 158 L100 72" stroke="#5cb87c" stroke-width="9" stroke-linecap="round"/>
+      <path d="M100 130 q-32 -6 -40 -28 q30 -5 40 18 Z" fill="#8ed7a3" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M100 112 q32 -6 40 -28 q-30 -5 -40 18 Z" fill="#a5e2b8" stroke="#5cb87c" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M100 72 q-8 -18 2 -28 q10 10 6 28 Z" fill="#6cba86"/>
+      <circle cx="82" cy="52" r="17" fill="#ff8b8b" stroke="#e05f5f" stroke-width="2.5"/>
+      <circle cx="118" cy="52" r="17" fill="#ff8b8b" stroke="#e05f5f" stroke-width="2.5"/>
+      <circle cx="100" cy="38" r="15" fill="#ffa3a3" stroke="#e05f5f" stroke-width="2.5"/>
+      <circle cx="95" cy="34" r="4" fill="#fff" opacity=".65"/>
+      <circle cx="112" cy="47" r="3.5" fill="#fff" opacity=".6"/>
+    </symbol>
+    <symbol id="ic-water" viewBox="0 0 100 100">
+      <path d="M50 14 q0 0 22 30 q14 19 14 28 a36 36 0 0 1 -72 0 q0 -9 14 -28 Q50 14 50 14 Z" fill="#7cc4f0" stroke="#5a9bd6" stroke-width="3"/>
+      <ellipse cx="38" cy="62" rx="9" ry="13" fill="#fff" opacity=".38" transform="rotate(-18 38 62)"/>
+    </symbol>
+
+    <!-- ===== 奖励/资源图标 ===== -->
+    <symbol id="ic-music" viewBox="0 0 100 100">
       <path d="M40 22 L78 14 L78 62" stroke="#b59bf0" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       <circle cx="30" cy="70" r="14" fill="#b59bf0"/>
       <circle cx="68" cy="62" r="14" fill="#9a7fe0"/>
     </symbol>
-<symbol id="ic-puzzle" viewBox="0 0 100 100">
+    <symbol id="ic-puzzle" viewBox="0 0 100 100">
       <path d="M20 26 h20 a9 9 0 0 1 18 0 h22 v22 a9 9 0 0 0 0 18 v18 h-22 a9 9 0 0 0 -18 0 h-20 v-18 a9 9 0 0 0 0 -18 Z" fill="#7ecf9a" stroke="#5cb87c" stroke-width="3" stroke-linejoin="round"/>
     </symbol>
-<symbol id="ic-palette" viewBox="0 0 100 100">
+    <symbol id="ic-palette" viewBox="0 0 100 100">
       <path d="M50 12 a38 38 0 1 0 0 76 q10 0 10 -9 q0 -7 -6 -10 q-6 -3 -6 -10 q0 -9 10 -9 h12 a20 20 0 0 0 20 -20 a38 38 0 0 0 -40 -18 Z" fill="#ffd98e" stroke="#e8b355" stroke-width="3"/>
       <circle cx="36" cy="38" r="7" fill="#f26d6d"/>
       <circle cx="58" cy="30" r="7" fill="#7cb8f0"/>
       <circle cx="30" cy="60" r="7" fill="#7ecf9a"/>
       <circle cx="52" cy="56" r="7" fill="#b59bf0"/>
     </symbol>
-<symbol id="ic-craft" viewBox="0 0 100 100">
+    <symbol id="ic-craft" viewBox="0 0 100 100">
       <path d="M22 74 L56 40" stroke="#c99a6b" stroke-width="6" stroke-linecap="round"/>
       <circle cx="66" cy="30" r="16" fill="#9bd4f2" stroke="#3a86c4" stroke-width="3"/>
       <circle cx="66" cy="30" r="6" fill="#fff"/>
       <path d="M22 74 l-6 10 l12 -4 Z" fill="#9c7a60"/>
     </symbol>
-<symbol id="ic-book2" viewBox="0 0 100 100">
+    <symbol id="ic-book2" viewBox="0 0 100 100">
       <rect x="18" y="20" width="64" height="62" rx="8" fill="#5a9bd6"/>
       <rect x="26" y="20" width="8" height="62" fill="#4a8ec4"/>
       <path d="M44 38 h26 M44 50 h26 M44 62 h16" stroke="#dff0ff" stroke-width="4" stroke-linecap="round"/>
     </symbol>
+
   </defs>
 </svg>
 
 <script>
 /* ============================================================
-   Eric 的学习工作台 · 纯净版 · 逻辑层
+   Eric 的学习工作台 · 逻辑层
    ============================================================ */
 const STORE_KEY = 'eric_pure_desk_v1';
+const OLD_KEYS = ['eric_desk_whale_v2', 'eric_desk_whale_v1'];
 
-/* 默认分类与任务（家长可增删） */
-const DEFAULT_CATS = [
-  { id: 'c1', name: '语文', icon: 'ic-schoolbook', tasks: [
-    { id: 't1', name: '练字' },
-    { id: 't2', name: '阅读' },
+/* ---------- 任务与奖励配置 ---------- */
+const SUBJECTS = [
+  { key: 'chinese', name: '语文', icon: 'ic-schoolbook', items: [
+    { id: 'yw1', name: '练字', icon: 'ic-pen', tip: '认真完成' },
+    { id: 'yw2', name: '阅读', icon: 'ic-read', tip: '认真完成' },
   ]},
-  { id: 'c2', name: '数学', icon: 'ic-math', tasks: [
-    { id: 't3', name: '口算' },
+  { key: 'math', name: '数学', icon: 'ic-math', items: [
+    { id: 'sx1', name: '口算', icon: 'ic-math', tip: '认真完成' },
   ]},
-  { id: 'c3', name: '英语', icon: 'ic-abc', tasks: [
-    { id: 't4', name: '听力' },
-    { id: 't5', name: 'ABC Reading 3本' },
+  { key: 'english', name: '英语', icon: 'ic-abc', items: [
+    { id: 'yy1', name: '听力', icon: 'ic-headphone', tip: '认真完成' },
+    { id: 'yy2', name: 'ABC Reading 3本', icon: 'ic-abc', tip: '认真完成' },
   ]},
-  { id: 'c4', name: '运动', icon: 'ic-rope', tasks: [
-    { id: 't6', name: '跳绳' },
-  ]},
-  { id: 'c5', name: '做家务', icon: 'ic-desk', tasks: [
-    { id: 't7', name: '收拾书桌' },
-    { id: 't8', name: '收拾衣物' },
-    { id: 't9', name: '收拾玩具' },
+  { key: 'sport', name: '运动', icon: 'ic-rope', items: [
+    { id: 'ty1', name: '跳绳', icon: 'ic-rope', tip: '认真完成' },
   ]},
 ];
-/* 新分类的图标池（全部鲸鱼组合图标） */
-const EXTRA_ICONS = ['ic-music','ic-puzzle','ic-palette','ic-craft','ic-book2','ic-pen','ic-read','ic-workbook','ic-headphone','ic-game'];
+/* 做家务（对应好习惯/做家务，打卡喂做家务能量） */
+
+const READING_ITEMS = [
+  { id: 'rd1', name: '阅读 20 分钟', icon: 'ic-read', tip: '安静地读一会儿' },
+  { id: 'rd2', name: '记录好词好句', icon: 'ic-book2', tip: '把喜欢的句子写下来' },
+];
+
+const HABITS = [
+  { id: 'hb1', name: '收拾书桌', icon: 'ic-desk', tip: '整洁小能手', energy: 12 },
+  { id: 'hb2', name: '收拾衣物', icon: 'ic-cloth', tip: '自己的事情自己做', energy: 12 },
+  { id: 'hb3', name: '收拾玩具', icon: 'ic-toybox', tip: '送玩具回家', energy: 12 },
+];
+
+/* ---------- 动态分类体系（家长可增删） ---------- */
+const CAT_ICON_POOL = ['ic-music','ic-puzzle','ic-palette','ic-craft','ic-book2','ic-game','ic-toybox','ic-headphone'];
+const TASK_ICON_POOL = ['ic-pen','ic-schoolbook','ic-workbook','ic-read','ic-math','ic-headphone','ic-abc','ic-book2','ic-star'];
+function buildDefaultCats() {
+  const cats = SUBJECTS.map(s => ({
+    id: s.key, name: s.name, icon: s.icon, kind: 'subject',
+    tasks: s.items.map(i => Object.assign({}, i)),
+  }));
+  cats.push({ id: 'reading', name: '每日阅读', icon: 'ic-read', kind: 'reading',
+    tasks: READING_ITEMS.map(i => Object.assign({}, i)) });
+  cats.push({ id: 'habit', name: '好习惯', icon: 'ic-desk', kind: 'habit',
+    tasks: HABITS.map(i => Object.assign({}, i)) });
+  return cats;
+}
+function ensureCats() {
+  if (!Array.isArray(state.cats) || !state.cats.length) state.cats = buildDefaultCats();
+  state.cats.forEach(c => {
+    if (!Array.isArray(c.tasks)) c.tasks = [];
+    if (!c.kind) c.kind = 'custom';
+  });
+}
+function catById(id) { return state.cats.find(c => c.id === id) || null; }
 
 const REWARDS = [
-  { id: 'r1', cost: 20,  name: '动画片半小时', icon: 'ic-tv' },
-  { id: 'r2', cost: 30,  name: '小零食', icon: 'ic-snack' },
-  { id: 'r3', cost: 40,  name: '玩桌游', icon: 'ic-game' },
-  { id: 'r4', cost: 50,  name: '小玩具', icon: 'ic-toy2' },
-  { id: 'r5', cost: 100, name: '游乐园玩', icon: 'ic-park' },
+  { id: 'r1', cost: 20,  name: '动画片半小时', emoji: '📺' },
+  { id: 'r2', cost: 30,  name: '小零食', emoji: '🍪' },
+  { id: 'r3', cost: 40,  name: '玩桌游', emoji: '🎲' },
+  { id: 'r4', cost: 50,  name: '小玩具', emoji: '🧸' },
+  { id: 'r5', cost: 100, name: '游乐园玩', emoji: '🎡' },
+];
+
+const RESOURCES = [
+  { icon: 'ic-music', name: '英语儿歌' },
+  { icon: 'ic-puzzle', name: '思维游戏' },
+  { icon: 'ic-book2', name: '识字动画' },
+  { icon: 'ic-craft', name: '美术手工' },
+  { icon: 'ic-palette', name: '涂色练习' },
+  { icon: 'ic-read', name: '亲子共读' },
 ];
 
 const SHOP = [
-  { id: 'carrot', cost: 2,  name: '小鱼干', emoji: '🐟', act: 'feed', effects: { hunger: 40 }, desc: '泡泡的最爱！' },
-  { id: 'apple',  cost: 3,  name: '苹果',   emoji: '🍎', act: 'feed', effects: { hunger: 25, mood: 15 }, desc: '脆脆甜甜' },
-  { id: 'cookie', cost: 5,  name: '小饼干', emoji: '🍪', act: 'feed', effects: { mood: 25, hunger: 10 }, desc: '香喷喷' },
-  { id: 'soap',   cost: 4,  name: '沐浴露', emoji: '🧼', act: 'bath', effects: { clean: 60, mood: 10 }, desc: '洗香香泡泡浴' },
-  { id: 'ball',   cost: 8,  name: '小皮球', emoji: '🎾', act: 'play', effects: { mood: 40 }, desc: '顶来顶去真好玩' },
+  { id: 'carrot', cost: 2, name: '小鱼干', emoji: '🐟', act: 'feed', effects: { hunger: 40 }, desc: '泡泡的最爱！' },
+  { id: 'apple', cost: 3, name: '苹果', emoji: '🍎', act: 'feed', effects: { hunger: 25, mood: 15 }, desc: '脆脆甜甜' },
+  { id: 'cookie', cost: 5, name: '小饼干', emoji: '🍪', act: 'feed', effects: { mood: 25, hunger: 10 }, desc: '香喷喷' },
+  { id: 'soap', cost: 4, name: '沐浴露', emoji: '🧼', act: 'bath', effects: { clean: 60, mood: 10 }, desc: '洗香香泡泡浴' },
+  { id: 'ball', cost: 8, name: '小皮球', emoji: '🎾', act: 'play', effects: { mood: 40 }, desc: '滚来滚去真好玩' },
   { id: 'medkit', cost: 12, name: '医药箱', emoji: '💊', act: 'heal', effects: { health: 100 }, desc: '生病时用' },
 ];
 
-/* ============ 状态 ============ */
+/* 做家务成长阶段 */
+const GARDEN_STAGES = [
+  { at: 0,    icon: 'ic-seed',   name: '一颗小种子', sub: '收拾书桌、衣物、玩具，给它攒能量吧' },
+  { at: 25,   icon: 'ic-sprout', name: '发芽啦', sub: '小芽冒出来了！继续加油' },
+  { at: 55,   icon: 'ic-plant',  name: '开花了', sub: '小花开了，真漂亮～' },
+  { at: 85,   icon: 'ic-fruit',  name: '结果子啦', sub: '太厉害了！你收获了一个果实' },
+];
+
+/* 课表数据 */
+const WEEK = [
+  { day: '周一', slots: [
+    { t: '16:45', x: '到家' }, { t: '17:00', x: '休息 / 点心' },
+    { t: '17:30', x: '写作业' }, { t: '18:30', x: '晚饭' },
+    { t: '19:00', x: '阅读时间' }, { t: '20:30', x: '洗漱睡觉' },
+  ]},
+  { day: '周二', slots: [
+    { t: '16:00', x: '到家' }, { t: '16:30', x: '写作业' },
+    { t: '17:30', x: '桌游时间' }, { t: '18:15', x: '晚饭' },
+    { t: '19:00', x: '阅读时间' }, { t: '20:30', x: '洗漱睡觉' },
+  ]},
+  { day: '周三', slots: [
+    { t: '16:45', x: '到家' }, { t: '17:00', x: '休息 / 点心' },
+    { t: '17:30', x: '写作业' }, { t: '18:30', x: '晚饭' },
+    { t: '19:00', x: '英语听力' }, { t: '20:30', x: '洗漱睡觉' },
+  ]},
+  { day: '周四', slots: [
+    { t: '16:45', x: '到家' }, { t: '17:00', x: '休息 / 点心' },
+    { t: '17:30', x: '写作业' }, { t: '18:30', x: '晚饭' },
+    { t: '19:00', x: '口算练习' }, { t: '20:30', x: '洗漱睡觉' },
+  ]},
+  { day: '周五', slots: [
+    { t: '16:45', x: '到家' }, { t: '17:00', x: '自由活动' },
+    { t: '18:00', x: '晚饭' }, { t: '19:00', x: '亲子时光' },
+    { t: '20:30', x: '洗漱睡觉' }, { t: '—', x: '周末愉快！', rest: true },
+  ]},
+];
+
+const ENCOURAGES = [
+  '保持好奇心，世界会给你带来很多惊喜！',
+  '今天多努力一点点，明天就会更棒一点点～',
+  '认真做事的样子最好看啦，加油！',
+  '每完成一项任务，都是给自己的小礼物🎁',
+  '慢慢来，比较快。你今天已经很棒了！',
+  '泡泡说：主人加油，我在这里陪着你🐳',
+  '读书是去看世界的路，今天也要读一点哦～',
+  '不怕慢，只怕停。今天的你，很了不起！',
+];
+
+/* ============================================================
+   状态
+   ============================================================ */
 function todayKey() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -1042,187 +1773,520 @@ function freshState() {
     v: 1,
     points: 0, stars: 5,
     today: todayKey(),
-    cats: JSON.parse(JSON.stringify(DEFAULT_CATS)),
-    tasks: {},
-    rewards: {},
+    tasks: {},            // 学科任务 + 阅读 + 好习惯
+    rewards: {},          // 已兑换的奖励 {id: 次数}
+    garden: { energy: 0, harvested: 0 },
+    wrongs: [],           // 错题列表
     pet: { hunger: 70, mood: 65, clean: 72, health: 100, lastDecay: todayKey(), born: todayKey() },
+    records: [],
     patCount: 0, patDay: todayKey(),
-    soundOn: true,
     firstRun: true,
+    soundOn: true,
+    currentPage: 'home',
   };
 }
-let state = null;
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
-      const obj = JSON.parse(raw);
-      state = Object.assign(freshState(), obj);
-      state.pet = Object.assign(freshState().pet, obj.pet || {});
-      if (!Array.isArray(state.cats) || !state.cats.length) state.cats = freshState().cats;
-    } else {
-      state = freshState();
+      const s = JSON.parse(raw);
+      if (s && s.pet) {
+        // 合并默认值：确保新增字段不会因旧数据缺失而报错
+        const merged = Object.assign(freshState(), s);
+        merged.pet = Object.assign(freshState().pet, s.pet || {});
+        merged.garden = Object.assign(freshState().garden, s.garden || {});
+        if (!Array.isArray(merged.wrongs)) merged.wrongs = [];
+        if (!Array.isArray(merged.books)) merged.books = [];
+        if (!Array.isArray(merged.records)) merged.records = [];
+        if (typeof merged.tasks !== 'object' || !merged.tasks) merged.tasks = {};
+        if (typeof merged.rewards !== 'object' || !merged.rewards) merged.rewards = {};
+        if (merged.firstRun !== false) merged.firstRun = true;
+        return merged;
+      }
     }
-  } catch (e) { state = freshState(); }
+  } catch (e) {}
+  // 从旧版本迁移（只迁移积分、星星、宠物）
+  let st = freshState();
+  for (const k of OLD_KEYS) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const o = JSON.parse(raw);
+      const src = (o && o.me) ? o.me : o;
+      if (!src || !src.pet) continue;
+      st.points = src.points || 0;
+      st.stars = (src.stars != null ? src.stars : 5);
+      st.pet = src.pet;
+      st.firstRun = false;
+      break;
+    } catch (e) {}
+  }
+  return st;
 }
-function saveState() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
-}
+let state = loadState();
+ensureCats();
+let mathCheck = null;
+let animBusy = false;
+let curPage = state.currentPage || 'home';
 
-/* 跨天：清打卡 + 宠物自然衰减 */
+function saveState() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+function daysBetween(a, b) { return Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000)); }
+
+/* 全部任务（学科 + 阅读 + 习惯） */
+function allTasks() {
+  const arr = [];
+  state.cats.forEach(c => c.tasks.forEach(i => arr.push(Object.assign({}, i, { group: c.id }))));
+  return arr;
+}
+/* 今日需完成的任务总数：由所有分类的任务动态合计 */
+function taskTotal() { return state.cats.reduce((n, c) => n + c.tasks.length, 0); }
+function groupItems(key) {
+  const c = catById(key);
+  return c ? c.tasks : [];
+}
+function doneCnt(list) { return list.filter(i => state.tasks[i.id]).length; }
+
+/* 每日重置 */
 function dayRollover() {
-  const today = todayKey();
-  if (state.today === today) return;
-  let days = 1;
-  try { days = Math.max(1, Math.round((new Date(today) - new Date(state.today)) / 86400000) || 1); } catch (e) {}
+  const now = todayKey();
+  if (state.today === now) return;
+  const gap = Math.min(daysBetween(state.today, now), 3);
+  state.today = now;
   state.tasks = {};
-  const p = state.pet;
-  p.hunger = Math.max(0, p.hunger - 8 * days);
-  p.clean  = Math.max(0, p.clean  - 6 * days);
-  p.mood   = Math.max(0, p.mood   - 5 * days);
-  if (p.hunger < 15 || p.clean < 15) p.health = Math.max(0, p.health - 10 * days);
-  state.today = today;
+  state.patCount = 0; state.patDay = now;
+  state.encourage = '';
+  if (gap > 0) {
+    const p = state.pet;
+    p.hunger = Math.max(0, p.hunger - 35 * gap);
+    p.clean  = Math.max(0, p.clean  - 30 * gap);
+    p.mood   = Math.max(0, p.mood   - 25 * gap);
+    if (p.hunger <= 15 || p.clean <= 15) p.health = Math.max(10, p.health - 15 * gap);
+    if (p.hunger <= 5 && p.clean <= 5)   p.health = Math.max(10, p.health - 10 * gap);
+    p.lastDecay = now;
+  }
   saveState();
 }
 
-/* ============ 工具 ============ */
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+/* 9 个首页宫格的定义 */
+function gridDefs() {
+  const defs = state.cats.filter(c => c.kind !== 'habit').map(c => ({
+    key: c.id, name: c.name, icon: c.icon,
+    done: doneCnt(c.tasks), total: c.tasks.length, page: c.id,
+  }));
+  defs.push({ key: 'schedule', name: '课表', icon: 'ic-calendar', done: 1, total: 1, page: 'schedule', always: true });
+  defs.push({ key: 'pet', name: '宠物', icon: 'ic-bunny', done: state.pet.health >= 40 ? 1 : 0, total: 1, page: 'pet', always: true });
+  defs.push({ key: 'wrong', name: '错题', icon: 'ic-wrong', done: state.wrongs.filter(w => !w.fixed).length === 0 ? 1 : 0, total: 1, page: 'wrong', always: true });
+  defs.push({ key: 'garden', name: '做家务', icon: 'ic-flower', done: doneCnt(groupItems('habit')) > 0 ? 1 : 0, total: 1, page: 'garden' });
+  defs.push({ key: 'all', name: '今日打卡', icon: 'ic-home', done: doneCnt(allTasks()), total: taskTotal(), page: 'home' });
+  return defs;
 }
-function allTasks() {
-  const arr = [];
-  state.cats.forEach(c => c.tasks.forEach(t => arr.push(t)));
-  return arr;
-}
-function doneCount() { return Object.keys(state.tasks).length; }
 
-/* ============ 渲染 ============ */
-function renderHero() {
-  const d = new Date();
-  const week = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][d.getDay()];
-  document.getElementById('homeDate').textContent =
-    `${d.getMonth()+1}月${d.getDate()}日 · ${week}`;
+/* ============================================================
+   导航
+   ============================================================ */
+const PAGE_TITLES = { home: '首页', garden: '做家务', chinese: '语文', math: '数学', english: '英语', reading: '每日阅读', schedule: '课表', pet: '宠物', wrong: '错题本' };
+function pageTitle(page) {
+  if (PAGE_TITLES[page]) return PAGE_TITLES[page];
+  const c = catById(page);
+  return c ? c.name : '';
 }
-function renderProg() {
-  const total = allTasks().length, done = doneCount();
-  const pct = total ? Math.round(done / total * 100) : 0;
+function validPage(page) { return !!PAGE_TITLES[page] || !!catById(page); }
+
+function go(page) {
+  curPage = page;
+  state.currentPage = page;
+  saveState();
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+  const tb = document.getElementById('tbTitle');
+  if (tb) tb.textContent = pageTitle(page);
+  const c = document.getElementById('content');
+  if (c) c.scrollTop = 0;
+  if (window.innerWidth <= 760) closeNav();
+  renderPage(page);
+}
+
+function toggleNav() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('navMask').classList.toggle('show');
+}
+function closeNav() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('navMask').classList.remove('show');
+}
+
+/* ============================================================
+   渲染：首页
+   ============================================================ */
+function fmtDate() {
+  const d = new Date();
+  const w = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${w}`;
+}
+function renderHome() {
+  const total = taskTotal();
+  const done = doneCnt(allTasks());
+  const pct = Math.round(done / total * 100);
+
+  document.getElementById('homeDate').textContent = fmtDate();
+  document.getElementById('homeDay').textContent = '今天也要加油哦';
   document.getElementById('homePct').textContent = pct + '%';
   document.getElementById('homeCnt').textContent = `(${done}/${total})`;
   document.getElementById('homeBar').style.width = pct + '%';
-  document.getElementById('taskBadge').textContent = `${done}/${total}`;
-}
-function renderCats() {
-  const wrap = document.getElementById('catWrap');
-  wrap.innerHTML = state.cats.map(c => {
-    const done = c.tasks.filter(t => state.tasks[t.id]).length;
-    const rows = c.tasks.map(t => {
-      const ok = !!state.tasks[t.id];
-      return `<div class="tk${ok ? ' done' : ''}" onclick="toggleTask('${t.id}')">
-        <span class="tk-dot"></span><span class="tk-name">${esc(t.name)}</span>
-        <span class="tk-check">${ok ? '✓' : ''}</span></div>`;
-    }).join('');
-    return `<div class="cat-card${done === c.tasks.length && c.tasks.length ? ' all-done' : ''}">
-      <div class="cat-head">
-        <svg class="c-ic"><use href="#${c.icon || 'ic-whale'}"/></svg>
-        <span class="c-name">${esc(c.name)}</span>
-        <span class="c-cnt">${done}/${c.tasks.length}</span>
-      </div>
-      <div class="cat-list">${rows || '<div class="cat-empty">这个分类还没有任务，请家长在 🔒 设置里添加</div>'}</div>
-    </div>`;
-  }).join('') || '<div class="cat-card"><div class="cat-list"><div class="cat-empty">还没有分类，请家长在 🔒 设置里添加</div></div></div>';
-}
-function renderRewards() {
-  document.getElementById('rwPts').textContent = state.points;
-  document.getElementById('rewardGrid').innerHTML = REWARDS.map(r => {
-    const ok = state.points >= r.cost;
-    const got = (state.rewards[r.id] || 0) > 0;
-    return `<div class="rw-card${ok ? ' ok' : ''}${got ? ' got' : ''}" onclick="redeem('${r.id}')">
-      <span class="rw-got">已兑 ${state.rewards[r.id]}</span>
-      <svg class="rw-ic"><use href="#${r.icon}"/></svg>
-      <div class="rw-name">${esc(r.name)}</div>
-      <span class="rw-cost">🏅 ${r.cost}分</span>
+  document.getElementById('homeStars').textContent = state.stars;
+  document.getElementById('tbStars').textContent = state.stars;
+
+  // 今日鼓励（每天固定一句，存在 state 里）
+  if (!state.encourage) {
+    const idx = parseInt(state.today.replace(/-/g, ''), 10) % ENCOURAGES.length;
+    state.encourage = ENCOURAGES[idx];
+    saveState();
+  }
+  document.getElementById('homeEncourage').textContent = state.encourage;
+
+  // 九宫格
+  const defs = gridDefs();
+  const gDone = defs.filter(d => d.done >= d.total).length;
+  document.getElementById('homeGridCnt').textContent = `${gDone}/${defs.length}`;
+  document.getElementById('homeGrid').innerHTML = defs.map(d => {
+    const isDone = d.done >= d.total;
+    const pc = d.total ? Math.round(d.done / d.total * 100) : 0;
+    return `<div class="g-card${isDone ? ' done' : ''}" onclick="go('${d.page}')">
+      <div class="gc-tick">✓</div>
+      <svg class="gc-ic"><use href="#${d.icon}"/></svg>
+      <div class="gc-name">${d.name}</div>
+      <div class="gc-prog">${d.key === 'all' ? d.done + '/' + d.total : d.done + '/' + d.total}</div>
+      <div class="gc-bar"><i style="width:${pc}%"></i></div>
     </div>`;
   }).join('');
-}
-function renderStats() {
-  document.getElementById('tbStars').textContent = state.stars;
-  document.getElementById('tbPts').textContent = state.points;
-  const sh = document.getElementById('shopStars');
-  if (sh) sh.textContent = state.stars;
-}
-function renderAll() {
-  renderProg(); renderCats(); renderRewards(); renderStats(); renderPet();
+
+  // 奖励中心
+  document.getElementById('homeRewards').innerHTML = REWARDS.map(r => {
+    const times = state.rewards[r.id] || 0;
+    const can = state.stars >= r.cost;
+    const cls = times > 0 ? ' owned' : '';
+    const label = times > 0 ? `已兑换 ${times} 次` : (can ? '兑换' : '兑换');
+    const dis = (times > 0 || can) ? '' : ' disabled';
+    return `<div class="r-card">
+      <div class="rc-emoji">${r.emoji}</div>
+      <div class="rc-name">${r.name}</div>
+      <div class="rc-cost">⭐${r.cost}</div>
+      <button class="rc-btn${cls}"${dis} onclick="${dis ? '' : `redeem('${r.id}')`}">${label}</button>
+    </div>`;
+  }).join('');
+
+  // 配套资源
+  document.getElementById('homeRes').innerHTML = RESOURCES.map(r =>
+    `<div class="res-tag" onclick="showToast('${r.name} · 请家长陪着一起玩哦～')">
+      <svg style="width:20px;height:20px"><use href="#${r.icon}"/></svg>${r.name}
+    </div>`
+  ).join('');
+
+  renderDots();
 }
 
-/* ============ 打卡 ============ */
-function toggleTask(id) {
-  let t = null;
-  state.cats.forEach(c => c.tasks.forEach(x => { if (x.id === id) t = x; }));
-  if (!t) return;
+/* 导航小红点：有未完成任务时显示 */
+function renderDots() {
+  const map = {};
+  state.cats.forEach(c => { map[c.kind === 'habit' ? 'garden' : c.id] = c.tasks; });
+  Object.entries(map).forEach(([k, items]) => {
+    const el = document.getElementById('dot-' + k);
+    if (!el) return;
+    const left = items.length - doneCnt(items);
+    if (left > 0) { el.textContent = left; el.classList.add('show'); }
+    else { el.classList.remove('show'); }
+  });
+  const pd = document.getElementById('dot-pet');
+  if (pd) { if (state.pet.health < 40) { pd.textContent = '!'; pd.classList.add('show'); } else pd.classList.remove('show'); }
+  const wd = document.getElementById('dot-wrong');
+  if (wd) {
+    const n = state.wrongs.filter(w => !w.fixed).length;
+    if (n > 0) { wd.textContent = n; wd.classList.add('show'); } else wd.classList.remove('show');
+  }
+}
+
+/* ============================================================
+   渲染：学科页 / 阅读页
+   ============================================================ */
+function taskCardHTML(t) {
+  const done = !!state.tasks[t.id];
+  return `<div class="t-item${done ? ' done' : ''}" onclick="toggleTask('${t.id}', this)">
+    <svg class="t-ic"><use href="#${t.icon || 'ic-star'}"/></svg>
+    <div class="t-info">
+      <div class="t-name">${t.name}</div>
+      <div class="t-tip">${t.tip || '认真完成它'}</div>
+    </div>
+    <div class="t-check">✓</div>
+  </div>`;
+}
+const SUBJECT_WRAP = { chinese: 'cnTasks', math: 'maTasks', english: 'enTasks', sport: 'spTasks', reading: 'rdTasks' };
+const SUBJECT_PRE = { chinese: 'cn', math: 'ma', english: 'en', sport: 'sp', reading: 'rd' };
+function renderSubject(key) {
+  const items = groupItems(key);
+  const wrap = document.getElementById(SUBJECT_WRAP[key] || ('cxTasks-' + key));
+  if (!wrap) return;
+  wrap.innerHTML = items.map(taskCardHTML).join('');
+  const done = doneCnt(items), total = items.length;
+  const pre = SUBJECT_PRE[key] || ('cx-' + key);
+  const pEl = document.getElementById(pre + 'Prog'), bEl = document.getElementById(pre + 'Bar');
+  if (pEl) pEl.textContent = `${done}/${total}`;
+  if (bEl) bEl.style.width = (total ? done / total * 100 : 0) + '%';
+  if (key === 'reading') renderBooks();
+}
+function renderBooks() {
+  const el = document.getElementById('rdBooks');
+  if (!el) return;
+  const books = state.books || [];
+  if (!books.length) {
+    el.innerHTML = `<div class="w-empty"><svg class="we-ic"><use href="#ic-book2"/></svg>
+      还没有记录书名，点下面的按钮加一本吧
+      <div style="margin-top:16px"><button class="wf-add" onclick="addBook()">＋ 记录正在读的书</button></div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = books.map((b, i) => `<div class="w-item">
+    <div class="w-sub" style="background:#ffb13d">书</div>
+    <div class="w-body">
+      <div class="w-q">${esc(b.name)}</div>
+      <div class="w-why">${b.date || ''}</div>
+    </div>
+    <div class="w-act"><button class="w-btn" onclick="delBook(${i})">删掉</button></div>
+  </div>`).join('') + `<div style="margin-top:14px"><button class="wf-add" onclick="addBook()">＋ 再加一本</button></div>`;
+}
+function addBook() {
+  const n = prompt('正在读的书名是？');
+  if (!n || !n.trim()) return;
+  if (!state.books) state.books = [];
+  state.books.unshift({ name: n.trim(), date: fmtDate() });
+  saveState(); renderBooks();
+  showToast('已记录：' + n.trim());
+  ding();
+}
+function delBook(i) {
+  if (!confirm('删掉这本书记录吗？')) return;
+  state.books.splice(i, 1);
+  saveState(); renderBooks();
+}
+
+/* ============================================================
+   渲染：做家务
+   ============================================================ */
+function gardenStage() {
+  const e = state.garden.energy;
+  let st = GARDEN_STAGES[0];
+  GARDEN_STAGES.forEach(s => { if (e >= s.at) st = s; });
+  return st;
+}
+function renderGarden() {
+  const e = state.garden.energy;
+  const st = gardenStage();
+  document.getElementById('gardenPlot').innerHTML = `<use href="#${st.icon}" transform="translate(-50,-55) scale(1.5)"/>`;
+  document.getElementById('gardenStage').textContent = st.name;
+  const next = GARDEN_STAGES.find(s => s.at > e);
+  document.getElementById('gardenStageSub').textContent = next
+    ? `再攒 ${next.at - e} 点能量，就会${next.name.replace('啦', '').replace('一颗小种子','发芽')}啦`
+    : '已经长到最高阶段啦，真了不起！';
+  const shown = Math.min(100, e % 100 === 0 && e > 0 ? 100 : (e % 100));
+  document.getElementById('gardenEnergyBar').style.width = (e >= 100 ? 100 : e) + '%';
+  document.getElementById('gardenEnergyTx').textContent = `${e}/100`;
+
+  const items = groupItems('habit');
+  document.getElementById('gardenHabitCnt').textContent = `${doneCnt(items)}/${items.length}`;
+  document.getElementById('gardenHabits').innerHTML = items.map(t => {
+    const done = !!state.tasks[t.id];
+    return `<div class="t-item${done ? ' done' : ''}" onclick="toggleTask('${t.id}', this)">
+      <svg class="t-ic"><use href="#${t.icon || 'ic-star'}"/></svg>
+      <div class="t-info">
+        <div class="t-name">${t.name}</div>
+        <div class="t-tip">${t.tip || '好习惯'}</div>
+      </div>
+      <div class="t-check">✓</div>
+    </div>`;
+  }).join('');
+
+  // 收获记录
+  const hv = document.getElementById('gardenHarvest');
+  if (state.garden.harvested === 0) {
+    hv.innerHTML = `<div class="w-empty"><svg class="we-ic"><use href="#ic-fruit"/></svg>
+      还没有收获过果实，攒满 100 点能量就能收获一个啦
+    </div>`;
+  } else {
+    let s = '';
+    for (let i = 0; i < state.garden.harvested; i++) s += `<span style="font-size:32px;margin-right:8px">🍎</span>`;
+    hv.innerHTML = `<div class="w-item"><div class="w-body"><div class="w-q">已收获 ${state.garden.harvested} 个果实</div>
+      <div class="w-why">继续保持好习惯，做家务会越来越美</div></div>
+      <div style="font-size:28px">${s}</div></div>`;
+  }
+}
+
+/* ============================================================
+   渲染：课表
+   ============================================================ */
+function renderSchedule() {
+  const todayIdx = new Date().getDay();  // 0=周日
+  const map = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4 };
+  const ti = map[todayIdx];
+  document.getElementById('weekWrap').innerHTML = WEEK.map((d, i) => `
+    <div class="day-col${i === ti ? ' today' : ''}">
+      <div class="day-head">
+        <span class="dh-name">${d.day}</span>
+        ${i === ti ? '<span class="dh-badge">今天</span>' : ''}
+      </div>
+      ${d.slots.map(s => `<div class="slot${s.rest ? ' rest' : ''}">
+        <span class="sl-time">${s.t}</span><span class="sl-tx">${s.x}</span>
+      </div>`).join('')}
+    </div>`).join('');
+}
+
+/* ============================================================
+   渲染：错题本
+   ============================================================ */
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function renderWrong() {
+  const list = state.wrongs;
+  const total = list.length, fixed = list.filter(w => w.fixed).length;
+  const bySub = {};
+  list.forEach(w => { if (!w.fixed) bySub[w.subject] = (bySub[w.subject] || 0) + 1; });
+  document.getElementById('wrongStats').innerHTML = `
+    <div class="ws-chip">📚 总共记录 <b>${total}</b> 题</div>
+    <div class="ws-chip">✅ 已订正 <b>${fixed}</b> 题</div>
+    <div class="ws-chip">⏳ 待订正 <b>${total - fixed}</b> 题</div>
+    ${Object.keys(bySub).length ? `<div class="ws-chip">📌 ${Object.entries(bySub).map(([k, v]) => k + ' ' + v).join(' · ')}</div>` : ''}
+  `;
+  const el = document.getElementById('wrongList');
+  if (!list.length) {
+    el.innerHTML = `<div class="w-empty"><svg class="we-ic"><use href="#ic-wrong"/></svg>
+      错题本还是空的，真棒！<br>遇到做错的题，记在这里，弄懂它就再也不会错啦～
+    </div>`;
+    return;
+  }
+  el.innerHTML = list.map((w, i) => `
+    <div class="w-item${w.fixed ? ' fixed' : ''}">
+      <div class="w-sub" style="background:${w.subject === '语文' ? '#3a86c4' : w.subject === '数学' ? '#5cb87c' : w.subject === '英语' ? '#9a7fe0' : '#8a9ba8'}">${esc(w.subject)}</div>
+      <div class="w-body">
+        <div class="w-q">${esc(w.question)}</div>
+        ${w.why ? `<div class="w-why">错因：${esc(w.why)}</div>` : ''}
+        <div class="w-why" style="margin-top:3px;font-size:11.5px">${w.date || ''}</div>
+      </div>
+      <div class="w-act">
+        <button class="w-btn ok${w.fixed ? ' on' : ''}" onclick="toggleWrong(${i})">${w.fixed ? '✓ 已订正' : '标记订正'}</button>
+        <button class="w-btn" onclick="delWrong(${i})">删</button>
+      </div>
+    </div>`).join('');
+}
+function addWrong() {
+  const subject = document.getElementById('wSubject').value;
+  const question = document.getElementById('wQuestion').value.trim();
+  const why = document.getElementById('wWhy').value.trim();
+  if (!question) { showToast('请先填一下题目哦'); return; }
+  state.wrongs.unshift({ subject, question, why, fixed: false, date: todayKey() });
+  saveState();
+  document.getElementById('wQuestion').value = '';
+  document.getElementById('wWhy').value = '';
+  renderWrong(); renderDots();
+  ding2();
+  showToast('已记入错题本，弄懂它就赚到啦！');
+}
+function toggleWrong(i) {
+  state.wrongs[i].fixed = !state.wrongs[i].fixed;
+  saveState(); renderWrong(); renderDots();
+  if (state.wrongs[i].fixed) { ding(); showToast('订正成功！又打败一道题 🎉'); }
+}
+function delWrong(i) {
+  if (!confirm('删掉这道错题记录吗？')) return;
+  state.wrongs.splice(i, 1);
+  saveState(); renderWrong(); renderDots();
+}
+
+/* ============================================================
+   打卡 / 兑换
+   ============================================================ */
+function toggleTask(id, el) {
+  const habit = groupItems('habit').find(h => h.id === id) || null;
+  const isHabit = !!habit;
+
   if (state.tasks[id]) {
+    if (!confirm('取消这项打卡吗？会退回 2 分和 1 颗星星哦')) return;
     delete state.tasks[id];
     state.points = Math.max(0, state.points - 2);
     state.stars = Math.max(0, state.stars - 1);
-    showToast(`已取消「${t.name}」（-2分 -1⭐）`);
+    if (isHabit && habit) {
+      state.garden.energy = Math.max(0, state.garden.energy - habit.energy);
+    }
+    showToast('已取消打卡');
   } else {
     state.tasks[id] = true;
     state.points += 2;
     state.stars += 1;
+
+    // 做家务能量
+    if (isHabit && habit) {
+      const oldE = state.garden.energy;
+      state.garden.energy += (habit.energy || 12);
+      // 满 100 收获
+      if (Math.floor(state.garden.energy / 100) > Math.floor(oldE / 100)) {
+        state.garden.harvested += 1;
+        state.garden.energy = state.garden.energy % 100;
+        setTimeout(() => { showToast('🎉 做家务结果子啦！收获 +1 个果实'); celebrate(); }, 700);
+      }
+    }
+
     ding();
-    const total = allTasks().length;
-    if (total && doneCount() === total) {
-      setTimeout(() => {
-        showToast('🎉 今日任务全部完成！Eric 太棒啦！');
-        celebrate(); ding(); ding();
-      }, 300);
-    } else {
-      showToast(`完成「${t.name}」+2分 +1⭐`);
+    if (el) {
+      const ft = document.createElement('div');
+      ft.className = 'float-tip';
+      ft.textContent = '+2分 +1⭐';
+      el.appendChild(ft);
+      setTimeout(() => ft.remove(), 1000);
+    }
+    // 宠物开心
+    if (state.pet.health >= 40) kekeHappy(650);
+
+    // 全部完成提示
+    if (doneCnt(allTasks()) === taskTotal()) {
+      setTimeout(() => { showToast('🎉 今日任务全部完成！Eric 太棒啦！'); celebrate(); ding(); ding(); }, 400);
     }
   }
-  saveState(); renderAll();
+  saveState();
+  renderAll();
 }
 
-/* ============ 奖励兑换 ============ */
-function redeem(rid) {
-  const r = REWARDS.find(x => x.id === rid);
+function redeem(id) {
+  const r = REWARDS.find(x => x.id === id);
   if (!r) return;
-  if (state.points < r.cost) {
-    showToast(`还差 ${r.cost - state.points} 分，继续加油！`);
-    return;
-  }
-  if (!confirm(`用 ${r.cost} 分兑换「${r.name}」？`)) return;
-  state.points -= r.cost;
-  state.rewards[rid] = (state.rewards[rid] || 0) + 1;
-  saveState(); renderAll(); ding(); ding2();
-  showToast(`🎉 已兑换「${r.name}」，找爸爸妈妈兑现吧！`);
+  if (state.stars < r.cost) { showToast('星星不够啦，去完成任务攒星星吧'); return; }
+  if (!confirm(`确定用 ${r.cost} 颗星星兑换「${r.name}」吗？`)) return;
+  state.stars -= r.cost;
+  state.rewards[id] = (state.rewards[id] || 0) + 1;
+  state.records.unshift({ name: r.name, cost: r.cost, date: todayKey() });
+  if (state.records.length > 60) state.records.length = 60;
+  saveState();
+  renderAll();
+  ding(); ding2(); celebrate();
+  showToast(`🎁 兑换成功：${r.name}！记得找爸爸妈妈领取哦`);
 }
 
-/* ============ 宠物 ============ */
-let animBusy = false, sayTimer = null;
-function stageEl() { return document.getElementById('stage'); }
-function say(txt, ms) {
+/* ============================================================
+   宠物互动
+   ============================================================ */
+const stageEl = () => document.getElementById('stage');
+let bubbleTimer = null;
+function say(msg, ms) {
   const el = document.getElementById('petSay');
   if (!el) return;
-  el.textContent = txt;
-  if (sayTimer) clearTimeout(sayTimer);
-  sayTimer = setTimeout(() => {
-    const p = state.pet;
-    if (p.health < 40) el.textContent = '呜呜…我好像生病了…';
-    else if (p.hunger < 25) el.textContent = '肚子咕咕叫…想吃小鱼干…';
-    else if (p.clean < 25) el.textContent = '身上黏黏的，想洗澡…';
-    else if (p.mood < 25) el.textContent = '好无聊呀，陪我玩玩嘛…';
-    else el.textContent = '今天也要加油哦！🐳';
-  }, ms || 2600);
+  el.textContent = msg;
+  if (bubbleTimer) clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(() => { el.textContent = '点我一下试试～'; }, ms || 2400);
 }
+
 function clearAnim() {
   const s = stageEl();
-  ['st-eating','st-bathing','st-playing','st-sick','st-heal-sneeze','st-heal-pill','st-happy','st-pat']
-    .forEach(c => s.classList.remove(c));
+  if (!s) return;
+  s.className = 'stage';
 }
 function kekeHappy(ms) {
   const s = stageEl();
+  if (!s) return;
   s.classList.add('st-happy');
   setTimeout(() => s.classList.remove('st-happy'), ms || 900);
 }
@@ -1241,6 +2305,8 @@ function patPet() {
   ding();
   setTimeout(() => { s.classList.remove('st-pat'); renderPet(); }, 700);
 }
+
+/* 喂食 */
 function openFeed() {
   if (state.pet.hunger > 92) { showToast('泡泡现在饱饱的，等它饿一点再喂吧'); return; }
   document.getElementById('feedTitle').textContent = '🐟 给泡泡喂点什么？';
@@ -1323,7 +2389,11 @@ async function applyItem(s) {
   renderAll();
   animBusy = false;
 }
+
+/* 商店 */
 function openShop() {
+  document.getElementById('shopTitle').textContent = '🛒 泡泡商店';
+  document.getElementById('shopStars').textContent = state.stars;
   document.getElementById('shopGrid').innerHTML = SHOP.map(s => {
     const ok = state.stars >= s.cost;
     const dis = s.act === 'heal' && state.pet.health >= 40 ? '泡泡没生病，用不上' : null;
@@ -1334,11 +2404,11 @@ function openShop() {
   showOv('ovShop');
   renderStats();
 }
-function barColor(v) {
-  return v > 55 ? 'linear-gradient(90deg,#9bdfb4,#58c07d)'
-       : v > 25 ? 'linear-gradient(90deg,#ffd98e,#ffbe3d)'
-       : 'linear-gradient(90deg,#ffb0b0,#f26d6d)';
-}
+
+/* ============================================================
+   渲染宠物状态
+   ============================================================ */
+function barColor(v) { return v > 55 ? 'linear-gradient(90deg,#9bdfb4,#58c07d)' : v > 25 ? 'linear-gradient(90deg,#ffd98e,#ffbe3d)' : 'linear-gradient(90deg,#ffb0b0,#f26d6d)'; }
 function renderPet() {
   const p = state.pet;
   [['sfHunger','hunger'],['sfMood','mood'],['sfClean','clean'],['sfHealth','health']].forEach(([id, key]) => {
@@ -1363,9 +2433,89 @@ function renderPet() {
   if (bh) bh.disabled = !sick;
 }
 
-/* ============ 家长锁 ============ */
-let mathCheck = null;
+function renderStats() {
+  const ps = document.getElementById('petStars');
+  if (ps) ps.textContent = state.stars;
+  const sh = document.getElementById('shopStars');
+  if (sh) sh.textContent = state.stars;
+  const tb = document.getElementById('tbStars');
+  if (tb) tb.textContent = state.stars;
+}
+
+/* ============================================================
+   总渲染
+   ============================================================ */
+function renderPage(page) {
+  if (page === 'home') renderHome();
+  else if (['chinese','math','english','sport','reading'].includes(page)) renderSubject(page);
+  else if (catById(page)) renderSubject(page);
+  else if (page === 'garden') renderGarden();
+  else if (page === 'schedule') renderSchedule();
+  else if (page === 'wrong') renderWrong();
+  else if (page === 'pet') renderPet();
+}
+function renderAll() {
+  renderPage(curPage);
+  renderDots();
+  renderStats();
+  if (curPage !== 'home') renderHome();
+}
+
+/* ============================================================
+   弹层 / 提示 / 音效
+   ============================================================ */
+function showOv(id) { const el = document.getElementById(id); if (el) el.classList.add('show'); }
+function closeOv(id) { const el = document.getElementById(id); if (el) el.classList.remove('show'); }
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+/* 简易音效（WebAudio，无需外部文件） */
+let ac = null;
+function beep(freq, dur, vol) {
+  if (state.soundOn === false) return;
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || .09, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur);
+    o.start(); o.stop(ac.currentTime + dur);
+  } catch (e) {}
+}
+function ding() { beep(880, .12); }
+function ding2() { setTimeout(() => beep(1180, .14), 90); }
+function celebrate() {
+  const el = document.getElementById('celebrate');
+  if (!el) return;
+  el.classList.add('show');
+  el.innerHTML = '';
+  const emojis = ['⭐','🎉','💙','🐳','🐟','✨','🌊'];
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement('div');
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-40px;font-size:${18+Math.random()*20}px;
+      animation:fall ${1.6+Math.random()*1.4}s linear forwards;animation-delay:${Math.random()*.5}s`;
+    el.appendChild(s);
+  }
+  setTimeout(() => { el.classList.remove('show'); el.innerHTML = ''; }, 3200);
+}
+/* 坠落动画 */
+const styleF = document.createElement('style');
+styleF.textContent = '@keyframes fall{to{transform:translateY(105vh) rotate(360deg);opacity:0}}';
+document.head.appendChild(styleF);
+
+/* ============================================================
+   家长锁（算术题）
+   ============================================================ */
 function genMath() {
+  // 两位数 × 一位数，或三位数 + 三位数 —— 二年级口算不出来
   if (Math.random() < .5) {
     const a = 12 + Math.floor(Math.random() * 88);
     const b = 3 + Math.floor(Math.random() * 7);
@@ -1410,17 +2560,9 @@ function submitMath() {
 }
 function openParent() { askMath('请家长完成算术题进入设置', () => { showOv('ovParent'); renderParent(); }); }
 
-/* ============ 家长面板 ============ */
-function renderParent() {
-  document.getElementById('parentSub').textContent = '当前管理：🐳 Eric 的学习工作台（纯净版）';
-  const pd = document.getElementById('pPointsDesc');
-  if (pd) pd.textContent = `当前 ${state.points} 分 · 可手动奖励或纠正`;
-  const sd = document.getElementById('pStarsDesc');
-  if (sd) sd.textContent = `当前 ${state.stars} ⭐ · 送泡泡的小礼物`;
-  const rd = document.getElementById('pResetDesc');
-  if (rd) rd.textContent = `已打卡 ${doneCount()} 项 · 误点可撤销`;
-  renderAdmin();
-}
+/* ============================================================
+   家长：分类与任务管理
+   ============================================================ */
 function renderAdmin() {
   const el = document.getElementById('adminBox');
   if (!el) return;
@@ -1428,12 +2570,13 @@ function renderAdmin() {
     const rows = c.tasks.map(t => `<div class="ad-task">
       <span>${esc(t.name)}</span>
       <button class="ad-del" onclick="delTask('${t.id}')">删</button></div>`).join('');
+    const lockNote = c.kind === 'habit' ? '·喂做家务' : (c.kind === 'reading' ? '·阅读页' : (c.kind === 'subject' ? '' : ''));
     return `<div class="ad-cat">
       <div class="ad-cat-head">
-        <svg class="ad-ic"><use href="#${c.icon || 'ic-whale'}"/></svg>
+        <svg class="ad-ic"><use href="#${c.icon || 'ic-star'}"/></svg>
         <b>${esc(c.name)}</b>
-        <span class="ad-cnt">${c.tasks.length}项</span>
-        <button class="ad-del" onclick="delCat('${c.id}')">删除分类</button>
+        <span class="ad-cnt">${c.tasks.length}项${lockNote}</span>
+        ${c.kind === 'custom' ? `<button class="ad-del" onclick="delCat('${c.id}')">删除分类</button>` : ''}
       </div>
       ${rows ? `<div>${rows}</div>` : ''}
       <div class="ad-add">
@@ -1441,52 +2584,102 @@ function renderAdmin() {
         <button onclick="addTask('${c.id}')">＋添加</button>
       </div>
     </div>`;
-  }).join('') || '<div class="ad-cat"><div class="ad-cat-head"><b style="color:#a3c3dc">暂无分类，请在下方添加</b></div></div>';
+  }).join('') || '<div class="ad-cat"><div class="ad-cat-head"><b style="color:#a3c3dc">暂无分类</b></div></div>';
 }
 function addCat() {
   const inp = document.getElementById('newCat');
   const name = (inp.value || '').trim();
   if (!name) { showToast('先输入分类名字'); return; }
-  if (state.cats.some(c => c.name === name)) { showToast('已有同名分类啦'); return; }
-  const icon = EXTRA_ICONS[state.cats.length % EXTRA_ICONS.length];
-  state.cats.push({ id: 'c' + Date.now(), name, icon, tasks: [] });
+  if (catById(name) || state.cats.some(c => c.name === name)) { showToast('已有同名分类啦'); return; }
+  const icon = CAT_ICON_POOL[state.cats.length % CAT_ICON_POOL.length];
+  state.cats.push({ id: 'c' + Date.now(), name, icon, kind: 'custom', tasks: [] });
   inp.value = '';
-  saveState(); renderAdmin(); renderAll();
+  saveState(); syncCustomUI(); renderAdmin(); renderAll();
   showToast(`已添加分类「${name}」，记得给它加任务哦`);
 }
 function delCat(cid) {
-  const c = state.cats.find(x => x.id === cid);
-  if (!c) return;
+  const c = catById(cid);
+  if (!c || c.kind !== 'custom') return;
   if (!confirm(`删除分类「${c.name}」和它的 ${c.tasks.length} 个任务？`)) return;
   c.tasks.forEach(t => delete state.tasks[t.id]);
   state.cats = state.cats.filter(x => x.id !== cid);
-  saveState(); renderAdmin(); renderAll();
+  saveState();
+  if (curPage === cid) { curPage = 'home'; }
+  syncCustomUI(); renderAdmin(); go(validPage(curPage) ? curPage : 'home');
   showToast(`已删除分类「${c.name}」`);
 }
 function addTask(cid) {
-  const c = state.cats.find(x => x.id === cid);
+  const c = catById(cid);
   if (!c) return;
   const inp = document.getElementById('nt-' + cid);
   const name = (inp.value || '').trim();
   if (!name) { showToast('先输入任务名字'); return; }
   if (c.tasks.some(t => t.name === name)) { showToast('这个分类里已有同名任务'); return; }
-  c.tasks.push({ id: 't' + Date.now() + Math.floor(Math.random() * 99), name });
+  const icon = TASK_ICON_POOL[c.tasks.length % TASK_ICON_POOL.length];
+  const t = { id: 't' + Date.now() + Math.floor(Math.random() * 99), name, icon };
+  if (c.kind === 'habit') { t.tip = '好习惯'; t.energy = 12; }
+  c.tasks.push(t);
   inp.value = '';
   saveState(); renderAdmin(); renderAll();
   showToast(`已添加「${name}」到 ${c.name}`);
 }
 function delTask(tid) {
-  let t = null;
-  state.cats.forEach(c => { const f = c.tasks.find(x => x.id === tid); if (f) t = { task: f, cat: c }; });
-  if (!t) return;
-  if (!confirm(`删除任务「${t.task.name}」？`)) return;
-  t.cat.tasks = t.cat.tasks.filter(x => x.id !== tid);
+  let hit = null;
+  state.cats.forEach(c => { const f = c.tasks.find(x => x.id === tid); if (f) hit = { task: f, cat: c }; });
+  if (!hit) return;
+  if (!confirm(`删除任务「${hit.task.name}」？`)) return;
+  hit.cat.tasks = hit.cat.tasks.filter(x => x.id !== tid);
   delete state.tasks[tid];
   saveState(); renderAdmin(); renderAll();
-  showToast(`已删除「${t.task.name}」`);
+  showToast(`已删除「${hit.task.name}」`);
+}
+/* 自定义分类 → 侧边导航 + 页面（增删后调用） */
+function syncCustomUI() {
+  document.querySelectorAll('.nav-item.nav-custom').forEach(n => n.remove());
+  document.querySelectorAll('.page.page-custom').forEach(p => p.remove());
+  const navBox = document.getElementById('customNav');
+  const content = document.getElementById('content');
+  if (!navBox || !content) return;
+  state.cats.filter(c => c.kind === 'custom').forEach(c => {
+    const nv = document.createElement('div');
+    nv.className = 'nav-item nav-custom';
+    nv.dataset.page = c.id;
+    nv.setAttribute('onclick', `go('${c.id}')`);
+    nv.innerHTML = `<svg class="nv-ic"><use href="#${c.icon || 'ic-star'}"/></svg><span>${esc(c.name)}</span><span class="nv-dot" id="dot-${c.id}"></span>`;
+    navBox.appendChild(nv);
+    const pg = document.createElement('section');
+    pg.className = 'page page-custom';
+    pg.id = 'page-' + c.id;
+    pg.innerHTML = `<div class="page-head">
+        <svg class="ph-ic"><use href="#${c.icon || 'ic-star'}"/></svg>
+        <h2>${esc(c.name)}</h2>
+        <div class="ph-sub">坚持打卡 · 攒星星</div>
+      </div>
+      <div class="page-prog">
+        <div class="pp-top"><span>${esc(c.name)}进度</span><span><b id="cx-${c.id}Prog">0/0</b></span></div>
+        <div class="pp-bar"><i id="cx-${c.id}Bar"></i></div>
+      </div>
+      <div class="task-list" id="cxTasks-${c.id}"></div>`;
+    content.appendChild(pg);
+  });
+}
+
+/* ============================================================
+   家长面板
+   ============================================================ */
+function renderParent() {
+  document.getElementById('parentSub').textContent = '当前管理：🐳 Eric 的学习工作台';
+  renderAdmin();
+  const pd = document.getElementById('pPointsDesc');
+  if (pd) pd.textContent = `当前 ${state.points} 分 · 可手动奖励或纠正`;
+  const sd = document.getElementById('pStarsDesc');
+  if (sd) sd.textContent = `当前 ${state.stars} ⭐ · 送泡泡的小礼物`;
+  const rd = document.getElementById('pResetDesc');
+  if (rd) rd.textContent = `已打卡 ${doneCnt(allTasks())} 项 · 误点可撤销`;
 }
 function adjPoints(n) {
   state.points = Math.max(0, state.points + n);
+  state.stars = Math.max(0, state.stars + (n > 0 ? Math.ceil(n / 2) : Math.floor(n / 2)));
   saveState(); renderParent(); renderAll();
   showToast(`积分 ${n > 0 ? '+' : ''}${n}`);
 }
@@ -1497,13 +2690,14 @@ function adjStars(n) {
 }
 function resetToday() {
   if (!confirm('重置今天的打卡吗？会退回相应的积分和星星')) return;
-  const n = doneCount();
+  const n = doneCnt(allTasks());
   state.tasks = {};
   state.points = Math.max(0, state.points - n * 2);
   state.stars = Math.max(0, state.stars - n);
   saveState(); renderParent(); renderAll();
   showToast('今日打卡已重置');
 }
+/* 数据备份 / 恢复 */
 function backupData() {
   try {
     const txt = JSON.stringify(state);
@@ -1516,7 +2710,9 @@ function backupData() {
     } else {
       prompt('长按复制下面这段备份码：', b64);
     }
-  } catch (e) { showToast('备份失败，请重试'); }
+  } catch (e) {
+    showToast('备份失败，请重试');
+  }
 }
 function restoreData() {
   const b64 = prompt('把之前保存的备份码粘贴到这里：');
@@ -1528,83 +2724,57 @@ function restoreData() {
     const so = state.soundOn;
     state = Object.assign(freshState(), obj);
     state.pet = Object.assign(freshState().pet, obj.pet || {});
-    if (!Array.isArray(state.cats) || !state.cats.length) state.cats = freshState().cats;
+    state.garden = Object.assign(freshState().garden, obj.garden || {});
+    if (!Array.isArray(state.wrongs)) state.wrongs = [];
+    if (!Array.isArray(state.books)) state.books = [];
     state.soundOn = so;
     state.firstRun = false;
+    ensureCats();
     saveState();
     closeOv('ovParent');
+    syncCustomUI();
+    go('home');
     renderAll();
     showToast('恢复成功！数据已经回来啦');
     ding(); ding2();
-  } catch (e) { showToast('备份码不正确，请检查后重试'); }
+  } catch (e) {
+    showToast('备份码不正确，请检查后重试');
+  }
 }
 function clearAll() {
-  if (!confirm('确定清空全部数据？积分、星星、宠物、分类都会重新开始！')) return;
+  if (!confirm('确定清空全部数据？积分、星星、宠物、错题、做家务都会重新开始！')) return;
   const so = state.soundOn;
   state = freshState();
   state.soundOn = so;
   state.firstRun = false;
+  ensureCats();
   saveState();
   closeOv('ovParent');
+  go('home');
   renderAll();
   showToast('已清空，重新开始啦～');
 }
 function toggleSound(el) { state.soundOn = el.checked; saveState(); }
 
-/* ============ 弹层 / 提示 / 音效 ============ */
-function showOv(id) { const el = document.getElementById(id); if (el) el.classList.add('show'); }
-function closeOv(id) { const el = document.getElementById(id); if (el) el.classList.remove('show'); }
-let toastTimer = null;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
-}
-let ac = null;
-function beep(freq, dur, vol) {
-  if (state.soundOn === false) return;
-  try {
-    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.connect(g); g.connect(ac.destination);
-    o.type = 'sine'; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol || .09, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur);
-    o.start(); o.stop(ac.currentTime + dur);
-  } catch (e) {}
-}
-function ding() { beep(880, .12); }
-function ding2() { setTimeout(() => beep(1180, .14), 90); }
-function celebrate() {
-  const el = document.getElementById('celebrate');
-  if (!el) return;
-  el.classList.add('show');
-  el.innerHTML = '';
-  const emojis = ['⭐','🎉','💙','🐳','🐟','✨','🌊'];
-  for (let i = 0; i < 26; i++) {
-    const s = document.createElement('div');
-    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    s.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-40px;font-size:${18+Math.random()*20}px;
-      animation:fall ${1.6+Math.random()*1.4}s linear forwards;animation-delay:${Math.random()*.5}s`;
-    el.appendChild(s);
-  }
-  setTimeout(() => { el.classList.remove('show'); el.innerHTML = ''; }, 3200);
-}
-const styleF = document.createElement('style');
-styleF.textContent = '@keyframes fall{to{transform:translateY(105vh) rotate(360deg);opacity:0}}';
-document.head.appendChild(styleF);
+/* ============================================================
+   启动
+   ============================================================ */
+/* 全局错误兜底：任何异常都提示并尝试恢复，避免白屏 */
+window.addEventListener('error', function (ev) {
+  console.error(ev.error || ev.message);
+});
 
-/* ============ 启动 ============ */
-window.addEventListener('error', function (ev) { console.error(ev.error || ev.message); });
 function boot() {
   document.getElementById('kekeSvg').addEventListener('click', patPet);
   document.getElementById('soundSwitch').checked = state.soundOn !== false;
   dayRollover();
-  renderHero();
+  if (!state.books) state.books = [];
+
+  syncCustomUI();
+  const startPage = validPage(curPage) ? curPage : 'home';
+  go(startPage);
   renderAll();
+
   if (state.firstRun) {
     state.firstRun = false;
     saveState();
@@ -1613,8 +2783,8 @@ function boot() {
     setTimeout(() => say('点我一下试试～', 3000), 600);
   }
 }
+
 try {
-  loadState();
   boot();
 } catch (err) {
   console.error('启动失败，尝试重建数据', err);
@@ -1626,12 +2796,13 @@ try {
     boot();
   } catch (e2) {
     document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif">'
-      + '<h2 style="color:#17558f">页面加载出了点小问题</h2>'
+      + '<h2 style="color:#1f6bb0">页面加载出了点小问题</h2>'
       + '<p style="color:#6a9cc0;margin:14px 0">请下拉刷新页面重试</p>'
       + '<button onclick="location.reload()" style="padding:12px 28px;border:none;border-radius:12px;'
       + 'background:#2f86c9;color:#fff;font-size:16px;font-weight:bold">刷新</button></div>';
   }
 }
+
 </script>
 </body>
 </html>
